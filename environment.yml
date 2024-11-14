@@ -1,0 +1,14 @@
+name: tensorlib
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.8
+  - cudatoolkit
+  - cudatoolkit-dev
+  - gcc=10
+  - gxx=10
+  - cmake
+  - pybind11
+  - numpy
+  - pip
