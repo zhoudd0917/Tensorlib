@@ -6,6 +6,7 @@ dependencies:
   - python=3.8
   - cudatoolkit
   - cudatoolkit-dev
+  - openblas
   - gcc=10
   - gxx=10
   - cmake
