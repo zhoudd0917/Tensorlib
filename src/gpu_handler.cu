@@ -1,3 +1,4 @@
+#include <cmath>
 #include <tensorlib/gpu_handler.cuh>
 #include <tensorlib/utils.hpp>
 
@@ -91,6 +92,44 @@ void GPUHandler::transpose(const float* input, float* output, size_t B,
                                   &alpha, input + b * M * N, N, &beta,
                                   input + b * M * N, M, output + b * M * N, M));
   }
+}
+
+__global__ void elementWiseLog(const float* input, float* output, size_t size) {
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if (idx < size) {
+    output[idx] = logf(input[idx]);  // Compute natural logarithm (base e)
+  }
+}
+
+void GPUHandler::log(const float* input, float* output, size_t size) {
+  // Each thread processes one element; set the CUDA grid size
+  int blockSize = 256;
+  int gridSize = (size + blockSize - 1) / blockSize;
+
+  // Launch the CUDA kernel to perform element-wise logarithm
+  elementWiseLog<<<gridSize, blockSize>>>(input, output, size);
+
+  // Check for CUDA errors
+  checkCudaErrors(cudaDeviceSynchronize());
+}
+
+__global__ void elementWiseLog(const float* input, float* output, size_t size) {
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if (idx < size) {
+    output[idx] = logf(input[idx]);  // Compute natural logarithm (base e)
+  }
+}
+
+void GPUHandler::log(const float* input, float* output, size_t size) {
+  // Each thread processes one element; set the CUDA grid size
+  int blockSize = 256;
+  int gridSize = (size + blockSize - 1) / blockSize;
+
+  // Launch the CUDA kernel to perform element-wise logarithm
+  elementWiseLog<<<gridSize, blockSize>>>(input, output, size);
+
+  // Check for CUDA errors
+  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 __global__ void selectIdx(float* X, float* Z, size_t size, size_t idx) {

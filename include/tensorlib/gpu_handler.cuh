@@ -41,6 +41,7 @@ class GPUHandler {
                         size_t N);
   static void select_idx(float* X, float* Z, std::vector<size_t> x_shape,
                          size_t idx);
+  static void log(const float* input, float* output, size_t size);
 
   cublasHandle_t getHandle() { return handle; }
 
