@@ -37,7 +37,7 @@ class Tensor {
     return size;
   }
   Device device() const { return device_; }
-  void to_device(Device device);
+  variable to_device(Device device);
 
   // Autograd
   void set_requires_grad(bool requires_grad);
@@ -49,6 +49,7 @@ class Tensor {
 
   // Utility
   void zero_();
+  float item() const;
   std::string to_string() const;
 };
 

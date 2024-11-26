@@ -5,7 +5,7 @@
 - [x] Fix memory leakage due to circular dependency (sharedptr).
 - [x] CPU implementation for most tensor functions.
 - [ ] GPU implementation for most tensor functions.
-- [ ] Simple neural network implementation.
+- [x] Simple neural network implementation.
 
 ## Running Instructions
 
@@ -102,6 +102,16 @@ output.backward(grad_output)
 similar to how it is done in PyTorch.
 
 The computational graph is then used to compute the gradient of the output tensor with respect to the input tensor using backpropagation and the chain rule.
+
+## Example Neural Network
+
+The project also includes a simple neural network implementation. The neural network is located in [mlp_iris.py](example/mlp_iris.py) and is trained on the Iris dataset. The neural network has input size 4, hidden size 5, and depth is 2. The training results are as follows:
+
+```
+Epoch 0, Loss: 2.8286805152893066
+Epoch 50, Loss: 0.6931464672088623
+Training completed.
+```
 
 ## Project Structure
 

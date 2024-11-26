@@ -25,7 +25,7 @@ Tensor::Tensor(std::vector<float> data, std::vector<size_t> shape,
   size_t size = shape[0] * stride_[0];
 
   if (data.size() != size) {
-    std::cout << data.size() << " " << size << std::endl;
+    std::cerr << data.size() << " " << size << std::endl;
     throw std::runtime_error("Data size does not match tensor size");
   }
 
@@ -83,29 +83,22 @@ Tensor::~Tensor() {
   }
 }
 
-// Move tensor data to device
-void Tensor::to_device(Device device) {
-  if (device == device_) return;
+// Move tensor data to device, if already on device, do nothing
+variable Tensor::to_device(Device device) {
+  if (device == device_) return std::shared_ptr<Tensor>(this);
+
+  variable new_tensor =
+      std::make_shared<Tensor>(shape_, device, requires_grad_);
 
   if (device == Device::CPU) {
-    float* host_data = new float[size()];
-    cudaMemcpy(host_data, data_, size() * sizeof(float),
+    cudaMemcpy(new_tensor->data_, data_, size() * sizeof(float),
                cudaMemcpyDeviceToHost);
-    cudaFree(data_);
-    data_ = host_data;
   } else if (device == Device::GPU) {
-    float* device_data;
-    cudaMalloc(&device_data, size() * sizeof(float));
-    cudaMemcpy(device_data, data_, size() * sizeof(float),
+    cudaMemcpy(new_tensor->data_, data_, size() * sizeof(float),
                cudaMemcpyHostToDevice);
-    delete[] data_;
-    data_ = device_data;
   }
 
-  device_ = device;
-
-  // Update autograd meta device
-  if (requires_grad_) autograd_meta_->grad_->to_device(device);
+  return new_tensor;
 }
 
 // Set requires_grad
@@ -170,6 +163,20 @@ void Tensor::zero_() {
   } else if (device_ == Device::GPU) {
     cudaMemset(data_, 0, size() * sizeof(float));
   }
+}
+
+float Tensor::item() const {
+  if (size() != 1) {
+    throw std::runtime_error("item() only supports tensors with one element");
+  }
+
+  float result;
+  if (device_ == Device::CPU) {
+    result = data_[0];
+  } else if (device_ == Device::GPU) {
+    cudaMemcpy(&result, data_, sizeof(float), cudaMemcpyDeviceToHost);
+  }
+  return result;
 }
 
 void tensor_to_string_recursive(const float* data,

@@ -6,7 +6,7 @@ device = Device.CPU  # Change to Device.CPU if needed
 
 x = tl.Tensor(
     np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0]).reshape(
-        2, 2, 3
+        [2,2,3]
     ),
     requires_grad=True,
     device=device,
@@ -46,7 +46,7 @@ y = tl.Tensor(
 )
 
 z = tl.matmul(x, y)
-w = z + 10.2
+w = tl.relu(z)
 
 # Print tensors
 print("x: ", x)
