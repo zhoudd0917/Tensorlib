@@ -4,7 +4,7 @@
 - [x] Implement backprop by extending computational graph.
 - [x] Fix memory leakage due to circular dependency (sharedptr).
 - [x] CPU implementation for most tensor functions.
-- [ ] GPU implementation for most tensor functions.
+- [x] GPU implementation for most tensor functions.
 - [x] Simple neural network implementation.
 
 ## Running Instructions
@@ -89,6 +89,10 @@ While constructing the computational graph, the user can specify the gradient of
 As the user does operations on the tensors, the computational graph is constructed. The new grad_fn, which represents the gradient function, is connected to the input tensors.
 
 ![Computational Graph with grad_fn](fig/comp_graph_1.png)
+
+In the [example cpp code](example/example.cpp), the computational graph is as follows
+
+![grad_fn connection](fig/grad_fn.png)
 
 When the user calls the `backward` function, the gradient of the output tensor with respect to the input tensor is computed using backpropagation. The gradients are then stored in the input gradients of the tensors. If the tensor for which the user called `backward` on is not a scalar, the user can manually specify the gradient of the output tensor with respect to the input tensor.
 
