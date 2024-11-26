@@ -46,15 +46,13 @@ y = tl.Tensor(
 )
 
 z = tl.matmul(x, y)
-w = z + z
-l = tl.max(w, 1)
+w = z + 10.2
 
 # Print tensors
 print("x: ", x)
 print("y: ", y)
 print("z: ", z)
 print("w: ", w)
-print("l: ", l)
 
 # Initialize the gradient for w
 init_grad_w = tl.Tensor(
@@ -77,15 +75,14 @@ init_grad_w = tl.Tensor(
             15.0,
             16.0,
         ]
-    ).reshape(2, 4, 2),
+    ).reshape(2, 2, 4),
     device=device,
 )
 
 # Perform backward pass for gradient calculation
-l.backward(init_grad_w)
+w.backward(init_grad_w)
 
 # Print gradients
-print("l grad: ", l.grad)
 print("z grad: ", z.grad)
 print("w grad: ", w.grad)
 print("y grad: ", y.grad)
