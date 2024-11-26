@@ -181,7 +181,7 @@ variable transpose(const variable& x) {
   if (device == Device::CPU) {
     CPUHandler::transpose(x->data(), z->data(), B, M, N);
   } else if (device == Device::GPU) {
-    throw std::runtime_error("Not implemented for GPU");
+    GPUHandler::transpose(x->data(), z->data(), B, M, N);
   }
 
   if (x->requires_grad()) {
