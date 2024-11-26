@@ -36,7 +36,7 @@ AddBackward::AddBackward(variable output, variable x, variable y) {
 void AddBackward::apply() {
   // The gradient of the sum is 1
   // check last_gradient has same size as inputs
-  variable output_grad_tensor = output_->autograd_meta().grad_;
+  variable output_grad_tensor = output_.lock()->autograd_meta().grad_;
   float* output_grad = output_grad_tensor->data();
 
   variable x = inputs_[0], y = inputs_[1];
@@ -87,7 +87,7 @@ SubBackward::SubBackward(variable output, variable x, variable y) {
 void SubBackward::apply() {
   // The gradient of the difference is 1
   // check last_gradient has same size as inputs
-  variable output_grad_tensor = output_->autograd_meta().grad_;
+  variable output_grad_tensor = output_.lock()->autograd_meta().grad_;
   float* output_grad = output_grad_tensor->data();
 
   variable x = inputs_[0], y = inputs_[1];
@@ -138,7 +138,7 @@ MulBackward::MulBackward(variable output, variable x, variable y) {
 void MulBackward::apply() {
   // The gradient of the product is the other input
   // check last_gradient has same size as inputs
-  variable output_grad_tensor = output_->autograd_meta().grad_;
+  variable output_grad_tensor = output_.lock()->autograd_meta().grad_;
   float* output_grad = output_grad_tensor->data();
 
   variable x = inputs_[0], y = inputs_[1];
@@ -194,7 +194,7 @@ DivBackward::DivBackward(variable output, variable x, variable y) {
 void DivBackward::apply() {
   // The gradient of the division is 1/y
   // check last_gradient has same size as inputs
-  variable output_grad_tensor = output_->autograd_meta().grad_;
+  variable output_grad_tensor = output_.lock()->autograd_meta().grad_;
   float* output_grad = output_grad_tensor->data();
 
   variable x = inputs_[0], y = inputs_[1];
@@ -262,7 +262,7 @@ MatmulBackward::MatmulBackward(variable output, variable x, variable y) {
 
 void MatmulBackward::apply() {
   // gradient for X is output_grad @ Y^T, and for Y is X^T @ output_grad
-  variable output_grad_tensor = output_->autograd_meta().grad_;
+  variable output_grad_tensor = output_.lock()->autograd_meta().grad_;
   float* output_grad = output_grad_tensor->data();
 
   variable x = inputs_[0], y = inputs_[1];
@@ -324,7 +324,7 @@ TransposeBackward::TransposeBackward(variable output, variable x) {
 void TransposeBackward::apply() {
   // The gradient of the transpose is the transpose itself
   // check last_gradient has same size as inputs
-  variable output_grad_tensor = output_->autograd_meta().grad_;
+  variable output_grad_tensor = output_.lock()->autograd_meta().grad_;
   float* output_grad = output_grad_tensor->data();
 
   variable x = inputs_[0];
@@ -371,7 +371,7 @@ void TransposeBackward::apply() {
     if (device == Device::CPU) {
       CPUHandler::transpose(output_grad, x_grad, B, N, M);
     } else if (device == Device::GPU) {
-      std::runtime_error("Not implemented for GPU");
+      GPUHandler::transpose(output_grad, x_grad, B, N, M);
     }
   }
 }
@@ -388,7 +388,7 @@ LogBackward::LogBackward(variable output, variable x) {
 void LogBackward::apply() {
   // The gradient of the log is 1/x
   // check last_gradient has same size as inputs
-  variable output_grad_tensor = output_->autograd_meta().grad_;
+  variable output_grad_tensor = output_.lock()->autograd_meta().grad_;
   float* output_grad = output_grad_tensor->data();
 
   variable x = inputs_[0];
@@ -422,7 +422,7 @@ ExpBackward::ExpBackward(variable output, variable x) {
 void ExpBackward::apply() {
   // The gradient of the exp is exp(x)
   // check last_gradient has same size as inputs
-  variable output_grad_tensor = output_->autograd_meta().grad_;
+  variable output_grad_tensor = output_.lock()->autograd_meta().grad_;
   float* output_grad = output_grad_tensor->data();
 
   variable x = inputs_[0];
@@ -456,7 +456,7 @@ SinBackward::SinBackward(variable output, variable x) {
 void SinBackward::apply() {
   // The gradient of the sin is cos(x)
   // check last_gradient has same size as inputs
-  variable output_grad_tensor = output_->autograd_meta().grad_;
+  variable output_grad_tensor = output_.lock()->autograd_meta().grad_;
   float* output_grad = output_grad_tensor->data();
 
   variable x = inputs_[0];
@@ -490,7 +490,7 @@ CosBackward::CosBackward(variable output, variable x) {
 void CosBackward::apply() {
   // The gradient of the cos is -sin(x)
   // check last_gradient has same size as inputs
-  variable output_grad_tensor = output_->autograd_meta().grad_;
+  variable output_grad_tensor = output_.lock()->autograd_meta().grad_;
   float* output_grad = output_grad_tensor->data();
 
   variable x = inputs_[0];
@@ -524,7 +524,7 @@ ReluBackward::ReluBackward(variable output, variable x) {
 void ReluBackward::apply() {
   // The gradient of the ReLU is 1 if x > 0, 0 otherwise
   // check last_gradient has same size as inputs
-  variable output_grad_tensor = output_->autograd_meta().grad_;
+  variable output_grad_tensor = output_.lock()->autograd_meta().grad_;
   float* output_grad = output_grad_tensor->data();
 
   variable x = inputs_[0];
@@ -557,7 +557,7 @@ SelectBackward::SelectBackward(variable output, variable x, size_t index) {
 }
 
 void SelectBackward::apply() {
-  variable output_grad_tensor = output_->autograd_meta().grad_;
+  variable output_grad_tensor = output_.lock()->autograd_meta().grad_;
   float* output_grad = output_grad_tensor->data();
 
   variable x = inputs_[0];
@@ -599,7 +599,7 @@ ReshapeBackward::ReshapeBackward(variable output, variable x) {
 }
 
 void ReshapeBackward::apply() {
-  variable output_grad_tensor = output_->autograd_meta().grad_;
+  variable output_grad_tensor = output_.lock()->autograd_meta().grad_;
   float* output_grad = output_grad_tensor->data();
 
   variable x = inputs_[0];
@@ -636,7 +636,7 @@ SumBackward::SumBackward(variable output, variable x, size_t axis) {
 }
 
 void SumBackward::apply() {
-  variable output_grad_tensor = output_->autograd_meta().grad_;
+  variable output_grad_tensor = output_.lock()->autograd_meta().grad_;
   float* output_grad = output_grad_tensor->data();
 
   variable x = inputs_[0];
@@ -656,9 +656,9 @@ void SumBackward::apply() {
     if (device == Device::CPU) {
       for (size_t i = 0; i < size; i++) {
         size_t output_idx = i, input_idx = 0;
-        std::vector<size_t> strides(output_->shape().size(), 1);
-        for (int j = output_->shape().size() - 2; j >= 0; --j) {
-          strides[j] = strides[j + 1] * output_->shape()[j + 1];
+        std::vector<size_t> strides(output_.lock()->shape().size(), 1);
+        for (int j = output_.lock()->shape().size() - 2; j >= 0; --j) {
+          strides[j] = strides[j + 1] * output_.lock()->shape()[j + 1];
         }
 
         for (int j = 0; j < x_shape.size(); ++j) {

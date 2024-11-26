@@ -2,6 +2,7 @@
 
 - [x] Implement computational graph.
 - [x] Implement backprop by extending computational graph.
+- [x] Fix memory leakage due to circular dependency (sharedptr).
 - [x] CPU implementation for most tensor functions.
 - [ ] GPU implementation for most tensor functions.
 - [ ] Simple neural network implementation.

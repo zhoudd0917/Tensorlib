@@ -36,7 +36,8 @@ class GPUHandler {
   static void matmul(const float* X, const float* Y, float* Z, size_t B,
                      size_t M, size_t K, size_t N, bool transX = false,
                      bool transY = false);
-  static void transpose(const float* input, float* output, size_t B, size_t M, size_t N);
+  static void transpose(const float* input, float* output, size_t B, size_t M,
+                        size_t N);
 
   cublasHandle_t getHandle() { return handle; }
 

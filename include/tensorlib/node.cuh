@@ -21,14 +21,12 @@ class Node : std::enable_shared_from_this<Node> {
   virtual void apply() = 0;
   void set_next_edges();
 
-  variable_list& inputs() { return inputs_; }
-  variable output() { return output_; }
   edge_list& next_edges() { return next_edges_; }
   const std::string& name() { return name_; }
 
  protected:
   // output from the last node, used to access last gradient
-  variable output_;
+  std::weak_ptr<Tensor> output_;
   // inputs for the function
   variable_list inputs_;
   // next nodes in the graph

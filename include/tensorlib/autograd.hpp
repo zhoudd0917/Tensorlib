@@ -2,6 +2,7 @@
 #define AUTOGRAD_HPP
 
 #include <memory>
+#include <tensorlib/types.hpp>
 
 class Node;
 class Tensor;
@@ -12,7 +13,7 @@ class AutogradMeta {
   AutogradMeta(Tensor* self);
   void set_grad_fn(std::shared_ptr<Node> grad_fn) { grad_fn_ = grad_fn; }
 
-  std::shared_ptr<Tensor> grad_;
+  variable grad_;
   std::shared_ptr<Node> grad_fn_;
 };
 

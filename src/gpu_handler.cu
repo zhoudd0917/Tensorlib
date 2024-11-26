@@ -27,11 +27,7 @@ void GPUHandler::multiply(const float* x, const float* y, float* z,
   cublasHandle_t handle = getInstance().getHandle();
   cublasSideMode_t mode = CUBLAS_SIDE_LEFT;
 
-  int m = size;    // Number of rows
-  int n = 1;       // Single column (vector)
-  int lda = size;  // Leading dimension of x (stride between rows)
-  int incx = 1;    // Stride of y (scalar/vector elements)
-  int ldc = size;  // Leading dimension of output z
+  int m = size, n = 1, lda = size, incx = 1, ldc = size;
 
   // Perform element-wise multiplication: z = diag(y) * x
   checkCublasErrors(cublasSdgmm(handle, mode, m, n, x, lda, y, incx, z, ldc));
@@ -83,16 +79,15 @@ void GPUHandler::matmul(const float* X, const float* Y, float* Z, size_t B,
       X, (transX ? M : K), stride_X, &beta, Z, N, stride_Z, B));
 }
 
-void GPUHandler::transpose(const float* input, float* output, size_t B, size_t M, size_t N) {
-    cublasHandle_t handle = getInstance().getHandle();
-    const float alpha = 1.0f;  // Scaling factor for the input matrix
-    const float beta = 0.0f;   // Scaling factor for the output matrix
+void GPUHandler::transpose(const float* input, float* output, size_t B,
+                           size_t M, size_t N) {
+  cublasHandle_t handle = getInstance().getHandle();
+  const float alpha = 1.0f;
+  const float beta = 0.0f;
 
-    for (size_t b = 0; b < B; ++b) {
-        // Use cublasSgeam to perform the transpose
-        checkCublasErrors(cublasSgeam( handle, CUBLAS_OP_T, CUBLAS_OP_N, M, N, &alpha, input, N, &beta, input, M, output, M));       // Output matrix with leading dimension N
-    }
-
-    // Synchronize to ensure all operations are completed
-    checkCudaErrors(cudaDeviceSynchronize());
+  for (size_t b = 0; b < B; ++b) {
+    checkCublasErrors(cublasSgeam(handle, CUBLAS_OP_T, CUBLAS_OP_N, M, N,
+                                  &alpha, input + b * M * N, N, &beta,
+                                  input + b * M * N, M, output + b * M * N, M));
+  }
 }
