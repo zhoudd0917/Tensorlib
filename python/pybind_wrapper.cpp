@@ -57,6 +57,8 @@ PYBIND11_MODULE(tensorlib, m) {
       .def("__mul__", [](variable x, variable y) { return x * y; })
       .def("__mul__", [](variable x, float y) { return x * y; })
       .def("__mul__", [](float x, variable y) { return x * y; })
+      .def("__matmul__", [](variable x, variable y) { return matmul(x, y); })
+      .def("__rmatmul__", [](variable x, variable y) { return matmul(y, x); })
       .def("__truediv__", [](variable x, variable y) { return x / y; })
       .def("__truediv__", [](variable x, float y) { return x / y; })
       .def("__truediv__", [](float x, variable y) { return x / y; })

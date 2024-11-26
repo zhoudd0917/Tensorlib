@@ -405,7 +405,8 @@ void LogBackward::apply() {
         x_grad[i] += output_grad[i] / x->data()[i];
       }
     } else if (device == Device::GPU) {
-      GPUHandler::logBackward(output_grad, x->data(), x_grad, x_grad_tensor->size());
+      GPUHandler::logBackward(output_grad, x->data(), x_grad,
+                              x_grad_tensor->size());
     }
   }
 }
