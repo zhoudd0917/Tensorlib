@@ -542,7 +542,7 @@ void ReluBackward::apply() {
         x_grad[i] += output_grad[i] * (x->data()[i] > 0);
       }
     } else if (device == Device::GPU) {
-      std::runtime_error("Not implemented for GPU");
+      GPUHandler::cosBackward(output_grad, x->data(), x_grad, x_grad_tensor->size());
     }
   }
 }
@@ -621,7 +621,7 @@ void ReshapeBackward::apply() {
         x_grad[i] += output_grad[i];
       }
     } else if (device == Device::GPU) {
-      std::runtime_error("Not implemented for GPU");
+      GPUHandler::reshape(output_grad, x_grad, x_grad_tensor->size());
     }
   }
 }

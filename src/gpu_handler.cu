@@ -375,3 +375,22 @@ void GPUHandler::sinBackward(const float* output_grad, const float* x_data, floa
     // Synchronize and check for CUDA errors
     checkCudaErrors(cudaDeviceSynchronize());
 }
+
+// cos back
+__global__ void cosBackwardKernel(const float* output_grad, const float* x_data, float* x_grad, size_t size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        x_grad[idx] -= output_grad[idx] * sinf(x_data[idx]);  // Gradient computation
+    }
+}
+
+void GPUHandler::cosBackward(const float* output_grad, const float* x_data, float* x_grad, size_t size) {
+    int blockSize = 256;  // Number of threads per block
+    int gridSize = (size + blockSize - 1) / blockSize;  // Number of blocks
+
+    // Launch the kernel
+    cosBackwardKernel<<<gridSize, blockSize>>>(output_grad, x_data, x_grad, size);
+
+    // Synchronize and check for CUDA errors
+    checkCudaErrors(cudaDeviceSynchronize());
+}
