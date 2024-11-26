@@ -312,22 +312,9 @@ void GPUHandler::relu(const float* input, float* output, size_t size) {
   checkCudaErrors(cudaDeviceSynchronize());
 }
 
-// reshape
-__global__ void reshapeKernel(const float* input, float* output, size_t size) {
-  int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-  if (idx < size) {
-    // Direct copy since the data layout doesn't change during reshape
-    output[idx] = input[idx];
-  }
-}
-
 void GPUHandler::reshape(const float* input, float* output, size_t size) {
-  int blockSize = 256;
-  int gridSize = (size + blockSize - 1) / blockSize;
-
-  // Launch the kernel
-  reshapeKernel<<<gridSize, blockSize>>>(input, output, size);
+  checkCudaErrors(cudaMemcpy(output, input, size * sizeof(float),
+                             cudaMemcpyDeviceToDevice));
 
   // Synchronize to ensure the operation is complete
   checkCudaErrors(cudaDeviceSynchronize());
