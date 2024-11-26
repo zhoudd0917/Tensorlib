@@ -337,3 +337,199 @@ void GPUHandler::logBackward(const float* output_grad, const float* x_data,
 
   checkCudaErrors(cudaDeviceSynchronize());
 }
+
+// exp back
+__global__ void expBackwardKernel(const float* output_grad, const float* x_data, float* x_grad, size_t size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        x_grad[idx] += output_grad[idx] * expf(x_data[idx]);  // Gradient computation
+    }
+}
+
+void GPUHandler::expBackward(const float* output_grad, const float* x_data, float* x_grad, size_t size) {
+    int blockSize = 256;  // Number of threads per block
+    int gridSize = (size + blockSize - 1) / blockSize;  // Number of blocks
+
+    // Launch the kernel
+    expBackwardKernel<<<gridSize, blockSize>>>(output_grad, x_data, x_grad, size);
+
+    // Synchronize and check for CUDA errors
+    checkCudaErrors(cudaDeviceSynchronize());
+}
+
+// sin back
+__global__ void sinBackwardKernel(const float* output_grad, const float* x_data, float* x_grad, size_t size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        x_grad[idx] += output_grad[idx] * cosf(x_data[idx]);  // Gradient computation
+    }
+}
+
+void GPUHandler::sinBackward(const float* output_grad, const float* x_data, float* x_grad, size_t size) {
+    int blockSize = 256;  // Number of threads per block
+    int gridSize = (size + blockSize - 1) / blockSize;  // Number of blocks
+
+    // Launch the kernel
+    sinBackwardKernel<<<gridSize, blockSize>>>(output_grad, x_data, x_grad, size);
+
+    // Synchronize and check for CUDA errors
+    checkCudaErrors(cudaDeviceSynchronize());
+}
+
+// cos back
+__global__ void cosBackwardKernel(const float* output_grad, const float* x_data, float* x_grad, size_t size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        x_grad[idx] -= output_grad[idx] * sinf(x_data[idx]);  // Gradient computation
+    }
+}
+
+void GPUHandler::cosBackward(const float* output_grad, const float* x_data, float* x_grad, size_t size) {
+    int blockSize = 256;  // Number of threads per block
+    int gridSize = (size + blockSize - 1) / blockSize;  // Number of blocks
+
+    // Launch the kernel
+    cosBackwardKernel<<<gridSize, blockSize>>>(output_grad, x_data, x_grad, size);
+
+    // Synchronize and check for CUDA errors
+    checkCudaErrors(cudaDeviceSynchronize());
+}
+
+// mean
+__global__ void meanKernel(const float* input, float* output, size_t axis_size, size_t inner_dim, size_t outer_dim) {
+    int outer_idx = blockIdx.x * blockDim.x + threadIdx.x;  // Outer loop index
+    if (outer_idx >= outer_dim) return;
+
+    float sum = 0.0f;
+    for (size_t i = 0; i < axis_size; ++i) {
+        sum += input[outer_idx * axis_size + i];
+    }
+    output[outer_idx] = sum / axis_size;  // Compute the mean
+}
+
+void GPUHandler::mean(const float* input, float* output, const std::vector<size_t>& shape, size_t axis) {
+    size_t axis_size = shape[axis];
+    size_t inner_dim = 1;
+    size_t outer_dim = 1;
+
+    // Compute dimensions
+    for (size_t i = 0; i < axis; ++i) outer_dim *= shape[i];
+    for (size_t i = axis + 1; i < shape.size(); ++i) inner_dim *= shape[i];
+
+    int blockSize = 256;  // Threads per block
+    int gridSize = (outer_dim + blockSize - 1) / blockSize;
+
+    // Launch kernel
+    meanKernel<<<gridSize, blockSize>>>(input, output, axis_size, inner_dim, outer_dim);
+
+    // Synchronize and check for errors
+    checkCudaErrors(cudaDeviceSynchronize());
+}
+
+// max
+__global__ void maxKernelWithIndices(const float* input, float* output, size_t* indices,
+                                     size_t axis_size, size_t inner_dim, size_t outer_dim) {
+    int outer_idx = blockIdx.x * blockDim.x + threadIdx.x;  // Outer loop index
+    if (outer_idx >= outer_dim) return;
+
+    float max_val = -FLT_MAX;  // Initialize to the smallest possible value
+    size_t max_idx = 0;
+
+    for (size_t i = 0; i < axis_size; ++i) {
+        float val = input[outer_idx * axis_size + i];
+        if (val > max_val) {
+            max_val = val;
+            max_idx = i;
+        }
+    }
+
+    output[outer_idx] = max_val;      // Store the maximum value
+    indices[outer_idx] = max_idx;    // Store the index of the maximum value
+}
+
+size_t* GPUHandler::max(const float* input, float* output, const std::vector<size_t>& shape, size_t axis) {
+    size_t axis_size = shape[axis];
+    size_t inner_dim = 1;
+    size_t outer_dim = 1;
+
+    // Compute dimensions
+    for (size_t i = 0; i < axis; ++i) outer_dim *= shape[i];
+    for (size_t i = axis + 1; i < shape.size(); ++i) inner_dim *= shape[i];
+
+    int blockSize = 256;  // Threads per block
+    int gridSize = (outer_dim + blockSize - 1) / blockSize;
+
+    // Allocate GPU memory for indices
+    size_t* d_indices;
+    checkCudaErrors(cudaMalloc(&d_indices, outer_dim * sizeof(size_t)));
+
+    // Launch the kernel
+    maxKernelWithIndices<<<gridSize, blockSize>>>(input, output, d_indices, axis_size, inner_dim, outer_dim);
+
+    // Synchronize and check for errors
+    checkCudaErrors(cudaDeviceSynchronize());
+
+    // Allocate host memory for indices and copy them back to host
+    size_t* h_indices = new size_t[outer_dim];
+    checkCudaErrors(cudaMemcpy(h_indices, d_indices, outer_dim * sizeof(size_t), cudaMemcpyDeviceToHost));
+
+    // Free GPU memory
+    checkCudaErrors(cudaFree(d_indices));
+
+    return h_indices;  // Return the indices to the caller
+}
+
+
+// min
+__global__ void minKernelWithIndices(const float* input, float* output, size_t* indices,
+                                     size_t axis_size, size_t inner_dim, size_t outer_dim) {
+    int outer_idx = blockIdx.x * blockDim.x + threadIdx.x;  // Outer loop index
+    if (outer_idx >= outer_dim) return;
+
+    float min_val = FLT_MAX;  // Initialize to the largest possible value
+    size_t min_idx = 0;
+
+    for (size_t i = 0; i < axis_size; ++i) {
+        float val = input[outer_idx * axis_size + i];
+        if (val < min_val) {
+            min_val = val;
+            min_idx = i;
+        }
+    }
+
+    output[outer_idx] = min_val;      // Store the minimum value
+    indices[outer_idx] = min_idx;    // Store the index of the minimum value
+}
+
+size_t* GPUHandler::min(const float* input, float* output, const std::vector<size_t>& shape, size_t axis) {
+    size_t axis_size = shape[axis];
+    size_t inner_dim = 1;
+    size_t outer_dim = 1;
+
+    // Compute dimensions
+    for (size_t i = 0; i < axis; ++i) outer_dim *= shape[i];
+    for (size_t i = axis + 1; i < shape.size(); ++i) inner_dim *= shape[i];
+
+    int blockSize = 256;  // Threads per block
+    int gridSize = (outer_dim + blockSize - 1) / blockSize;
+
+    // Allocate GPU memory for indices
+    size_t* d_indices;
+    checkCudaErrors(cudaMalloc(&d_indices, outer_dim * sizeof(size_t)));
+
+    // Launch the kernel
+    minKernelWithIndices<<<gridSize, blockSize>>>(input, output, d_indices, axis_size, inner_dim, outer_dim);
+
+    // Synchronize and check for errors
+    checkCudaErrors(cudaDeviceSynchronize());
+
+    // Allocate host memory for indices and copy them back to host
+    size_t* h_indices = new size_t[outer_dim];
+    checkCudaErrors(cudaMemcpy(h_indices, d_indices, outer_dim * sizeof(size_t), cudaMemcpyDeviceToHost));
+
+    // Free GPU memory
+    checkCudaErrors(cudaFree(d_indices));
+
+    return h_indices;  // Return the indices to the caller
+}
+
