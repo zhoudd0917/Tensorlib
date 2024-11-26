@@ -5,20 +5,32 @@
 
 class Tensor;
 
-variable operator+(const variable& x, const variable& y);
-variable operator-(const variable& x, const variable& y);
-variable operator*(const variable& x, const variable& y);
-variable operator/(const variable& x, const variable& y);
-variable matmul(const variable& x, const variable& y);
-variable transpose(const variable& x);
-variable log(const variable& x);
-variable exp(const variable& x);
-variable sin(const variable& x);
-variable cos(const variable& x);
-variable relu(const variable& x);
-variable select_idx(const variable& x, size_t index);
-variable reshape(const variable& x, std::vector<size_t> shape);
-variable flatten(const variable& x);
-variable sum(const variable& x, size_t axis);
+variable operator+(variable x, variable y);
+variable operator+(variable x, float y);
+variable operator+(float x, variable y);
+variable operator-(variable x, variable y);
+variable operator-(variable x, float y);
+variable operator-(float x, variable y);
+variable operator*(variable x, variable y);
+variable operator*(variable x, float y);
+variable operator*(float x, variable y);
+variable operator/(variable x, variable y);
+variable operator/(variable x, float y);
+variable operator/(float x, variable y);
+variable matmul(variable x, variable y);
+variable transpose(variable x);
+variable log(variable x);
+variable exp(variable x);
+variable sin(variable x);
+variable cos(variable x);
+variable relu(variable x);
+variable select_idx(variable x, size_t index);
+variable reshape(variable x, std::vector<size_t> shape);
+variable flatten(variable x);
+variable broadcast_to(variable x, std::vector<size_t> shape);
+variable sum(variable x, size_t axis);
+variable mean(variable x, size_t axis);
+variable max(variable x, size_t axis);
+variable min(variable x, size_t axis);
 
 #endif

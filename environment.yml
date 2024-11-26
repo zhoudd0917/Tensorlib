@@ -10,6 +10,7 @@ dependencies:
   - gcc=10
   - gxx=10
   - cmake
+  - graphviz # optional, to visualize the computational graph
   - pybind11
   - numpy
   - pip

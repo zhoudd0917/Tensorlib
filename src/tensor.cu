@@ -203,7 +203,7 @@ std::string Tensor::to_string() const {
   // std::string result = "Tensor([\n";
   std::stringstream result;
 
-  result << std::fixed << std::setprecision(2) << "Tensor([\n";
+  result << std::fixed << std::setprecision(2) << "Tensor(";
 
   // Allocate temporary CPU array if data is on GPU
   float* temp = nullptr;
@@ -217,7 +217,7 @@ std::string Tensor::to_string() const {
   // Use the CPU data for string formatting
   tensor_to_string_recursive(temp, shape_, stride_, 0, 0, result, 2);
 
-  result << "\n], ";
+  result << ", ";
   if (requires_grad_) {
     if (autograd_meta_->grad_fn_) {
       result << "grad_fn=<" + autograd_meta_->grad_fn_->name() + ">, ";

@@ -13,4 +13,7 @@ using variable_list = std::vector<variable>;
 using node_list = std::vector<std::shared_ptr<Node>>;
 using edge_list = std::vector<Edge>;
 
+// Enum for device type
+enum class Device { CPU, GPU };
+
 #endif

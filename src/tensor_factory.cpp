@@ -18,6 +18,13 @@ variable TensorFactory::zeros(std::vector<size_t> shape, Device device,
   return std::make_shared<Tensor>(shape, device, requires_grad);
 }
 
+variable TensorFactory::ones(std::vector<size_t> shape, Device device,
+                             bool requires_grad) {
+  size_t size = calculate_size(shape);
+  std::vector<float> data(size, 1.0f);
+  return std::make_shared<Tensor>(data, shape, device, requires_grad);
+}
+
 variable TensorFactory::randn(std::vector<size_t> shape, float mean_val,
                               float std_val, Device device,
                               bool requires_grad) {

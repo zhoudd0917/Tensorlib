@@ -2,7 +2,7 @@ import tensorlib as tl
 from tensorlib import Device
 import numpy as np
 
-device = Device.GPU  # Change to Device.CPU if needed
+device = Device.CPU  # Change to Device.CPU if needed
 
 x = tl.Tensor(
     np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0]).reshape(
@@ -47,7 +47,7 @@ y = tl.Tensor(
 
 z = tl.matmul(x, y)
 w = z + z
-l = tl.transpose(w)
+l = tl.max(w, 1)
 
 # Print tensors
 print("x: ", x)

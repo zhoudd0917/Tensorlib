@@ -1,4 +1,5 @@
 #include <tensorlib/gpu_handler.cuh>
+#include <tensorlib/utils.hpp>
 
 GPUHandler& GPUHandler::getInstance() {
   static GPUHandler instance;
@@ -90,4 +91,23 @@ void GPUHandler::transpose(const float* input, float* output, size_t B,
                                   &alpha, input + b * M * N, N, &beta,
                                   input + b * M * N, M, output + b * M * N, M));
   }
+}
+
+__global__ void selectIdx(float* X, float* Z, size_t size, size_t idx) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  if (i < size) {
+    Z[i] = X[i + idx * size];
+  }
+}
+
+void GPUHandler::select_idx(float* X, float* Z, std::vector<size_t> x_shape,
+                            size_t idx) {
+  size_t size = calculate_size(x_shape) / x_shape[0];
+
+  int blockSize = 256;
+  int gridSize = (size + blockSize - 1) / blockSize;
+
+  selectIdx<<<gridSize, blockSize>>>(X, Z, size, idx);
+
+  checkCudaErrors(cudaDeviceSynchronize());
 }

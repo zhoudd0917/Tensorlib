@@ -8,9 +8,6 @@
 
 class AutogradMeta;
 
-// Enum for device type
-enum class Device { CPU, GPU };
-
 class Tensor {
  private:
   float* data_;                 // Raw data pointer

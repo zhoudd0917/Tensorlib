@@ -48,40 +48,45 @@ PYBIND11_MODULE(tensorlib, m) {
       .def_property("grad", &Tensor::grad, &Tensor::set_grad)
       .def("backward", &Tensor::backward)
       .def("zero_", &Tensor::zero_)
-      .def("__add__", [](const std::shared_ptr<Tensor>& a,
-                         const std::shared_ptr<Tensor>& b) { return a + b; })
-      .def("__sub__", [](const std::shared_ptr<Tensor>& a,
-                         const std::shared_ptr<Tensor>& b) { return a - b; })
-      .def("__mul__", [](const std::shared_ptr<Tensor>& a,
-                         const std::shared_ptr<Tensor>& b) { return a * b; })
-      .def("__truediv__",
-           [](const std::shared_ptr<Tensor>& a,
-              const std::shared_ptr<Tensor>& b) { return a / b; })
+      .def("__add__", [](variable a, variable b) { return a + b; })
+      .def("__sub__", [](variable a, variable b) { return a - b; })
+      .def("__mul__", [](variable a, variable b) { return a * b; })
+      .def("__truediv__", [](variable a, variable b) { return a / b; })
+      .def("__getitem__", &select_idx)
       .def("__repr__", &Tensor::to_string);
 
+  // Create new tensors
+  m.def("randn", &TensorFactory::randn, py::arg("shape"), py::arg("mean") = 0.f,
+        py::arg("std") = 1.f, py::arg("device") = Device::CPU,
+        py::arg("requires_grad") = false, "Create a tensor with random values");
+  m.def("zeros", &TensorFactory::zeros, py::arg("shape"),
+        py::arg("device") = Device::CPU, py::arg("requires_grad") = false,
+        "Create a tensor with zeros");
+  m.def("ones", &TensorFactory::ones, py::arg("shape"),
+        py::arg("device") = Device::CPU, py::arg("requires_grad") = false,
+        "Create a tensor with ones");
+
   // Operators and utility functions
+  m.def("add", [](variable x, variable y) { return x + y; }, "Addition");
   m.def(
-      "add", [](const variable& x, const variable& y) { return x + y; },
-      "Addition");
+      "subtract", [](variable x, variable y) { return x - y; }, "Subtraction");
   m.def(
-      "subtract", [](const variable& x, const variable& y) { return x - y; },
-      "Subtraction");
-  m.def(
-      "multiply", [](const variable& x, const variable& y) { return x * y; },
+      "multiply", [](variable x, variable y) { return x * y; },
       "Multiplication");
-  m.def(
-      "divide", [](const variable& x, const variable& y) { return x / y; },
-      "Division");
+  m.def("divide", [](variable x, variable y) { return x / y; }, "Division");
   m.def("matmul", &matmul, "Matrix multiplication");
 
-  m.def("log", [](const variable& x) { return log(x); }, "Logarithm");
-  m.def("exp", [](const variable& x) { return exp(x); }, "Exponential");
-  m.def("sin", [](const variable& x) { return sin(x); }, "Exponential");
-  m.def("cos", [](const variable& x) { return cos(x); }, "Exponential");
+  m.def("log", [](variable x) { return log(x); }, "Logarithm");
+  m.def("exp", [](variable x) { return exp(x); }, "Exponential");
+  m.def("sin", [](variable x) { return sin(x); }, "Exponential");
+  m.def("cos", [](variable x) { return cos(x); }, "Exponential");
   m.def("transpose", &transpose, "Transpose");
   m.def("relu", &relu, "ReLU");
   m.def("select_idx", &select_idx, "Select index");
   m.def("reshape", &reshape, "Reshape");
   m.def("flatten", &flatten, "Flatten");
   m.def("sum", &sum, "Sum along axis");
+  m.def("mean", &mean, "Mean along axis");
+  m.def("max", &max, "Max along axis");
+  m.def("min", &min, "Min along axis");
 }

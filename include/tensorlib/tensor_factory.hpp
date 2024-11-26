@@ -22,6 +22,9 @@ class TensorFactory {
   // Create a zero tensor from shape with optional device and gradient flag
   static variable zeros(std::vector<size_t> shape, Device device = Device::CPU,
                         bool requires_grad = false);
+  // Create a one tensor from shape with optional device and gradient flag
+  static variable ones(std::vector<size_t> shape, Device device = Device::CPU,
+                       bool requires_grad = false);
   // Helper function to initialize random normal data
   static variable randn(std::vector<size_t> shape, float mean = 0.0,
                         float stddev = 1.0, Device device = Device::CPU,

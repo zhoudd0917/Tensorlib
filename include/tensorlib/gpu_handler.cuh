@@ -4,6 +4,7 @@
 #include <cublas_v2.h>
 
 #include <stdexcept>
+#include <vector>
 
 #define checkCublasErrors(call)                                         \
   {                                                                     \
@@ -38,6 +39,8 @@ class GPUHandler {
                      bool transY = false);
   static void transpose(const float* input, float* output, size_t B, size_t M,
                         size_t N);
+  static void select_idx(float* X, float* Z, std::vector<size_t> x_shape,
+                         size_t idx);
 
   cublasHandle_t getHandle() { return handle; }
 

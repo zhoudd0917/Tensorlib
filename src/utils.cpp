@@ -15,12 +15,60 @@ size_t convert_to_index(size_t index, variable t) {
   return result;
 }
 
+// calculate index after droping the axis dimension
+size_t calculate_index_after_drop_axis(size_t index, size_t axis,
+                                       const std::vector<size_t>& shape) {
+  size_t newIndex = 0;
+  size_t stride = 1;
+  size_t nDims = shape.size();
+
+  for (size_t i = nDims; i > 0; i--) {
+    if (i - 1 != axis) {
+      size_t dimSize = shape[i - 1];
+      size_t currentDimIndex = index % dimSize;
+      newIndex += currentDimIndex * stride;
+      stride *= dimSize;
+    }
+    index /= shape[i - 1];
+  }
+  return newIndex;
+}
+
+size_t calculate_index_after_add_axis(size_t index, size_t axis,
+                                      const std::vector<size_t>& shape) {
+  size_t new_index = 0;
+  size_t old_stride = 1, new_stride = 1;
+  size_t nd = shape.size();
+
+  for (size_t i = nd; i > 0; i--) {
+    size_t dim_size = shape[i - 1];
+    if (i - 1 != axis) {
+      size_t c_i = index % dim_size;
+      new_index += c_i * new_stride;
+      new_stride *= dim_size;
+      old_stride *= dim_size;
+      index /= dim_size;
+    } else {
+      new_stride *= dim_size;
+    }
+  }
+  return new_index;
+}
+
 size_t calculate_size(const std::vector<size_t>& shape) {
   size_t size = 1;
   for (auto& s : shape) {
     size *= s;
   }
   return size;
+}
+
+std::vector<size_t> calculate_strides(const std::vector<size_t>& shape) {
+  std::vector<size_t> strides(shape.size(), 1);
+  for (size_t i = shape.size() - 1; i > 0; --i) {
+    strides[i - 1] = strides[i] * shape[i];
+  }
+  return strides;
 }
 
 void check_tensor_shape(const variable& x, const variable& y) {
