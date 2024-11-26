@@ -105,18 +105,18 @@ PYBIND11_MODULE(tensorlib, m) {
   m.def("flatten", &flatten, "Flatten");
   m.def(
       "sum", [](variable x, size_t idx) { return sum(x, idx); },
-      "Sum along axis");
+      py::arg("tensor"), py::arg("axis"), "Sum along axis");
   m.def("sum", [](variable x) { return sum(x); }, "Sum whole tensor");
   m.def(
       "mean", [](variable x, size_t idx) { return mean(x, idx); },
-      "Mean along axis");
+      py::arg("tensor"), py::arg("axis"), "Mean along axis");
   m.def("mean", [](variable x) { return mean(x); }, "Mean whole tensor");
   m.def(
       "max", [](variable x, size_t idx) { return max(x, idx); },
-      "Max along axis");
+      py::arg("tensor"), py::arg("axis"), "Max along axis");
   m.def("max", [](variable x) { return max(x); }, "Max whole tensor");
   m.def(
       "min", [](variable x, size_t idx) { return min(x, idx); },
-      "Min along axis");
+      py::arg("tensor"), py::arg("axis"), "Min along axis");
   m.def("min", [](variable x) { return min(x); }, "Min whole tensor");
 }

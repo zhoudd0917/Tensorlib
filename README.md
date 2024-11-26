@@ -1,15 +1,22 @@
 # TensorLib
 
-- [x] Implement computational graph.
-- [x] Implement backprop by extending computational graph.
-- [x] Fix memory leakage due to circular dependency (sharedptr).
-- [x] CPU implementation for most tensor functions.
-- [x] GPU implementation for most tensor functions.
-- [x] Simple neural network implementation.
+## Overview
 
-## Running Instructions
+TensorLib is a simple library for tensor operations, similar to PyTorch. The library supports both CPU and GPU tensors, and the operations are implemented using OpenMP/OpenBlas for CPU and CUDA/CuBlas for GPU. The library also supports automatic differentiation, similar to PyTorch autograd.
 
-### Python
+## Library Structure
+
+The library is structured as follows (see under `include/` and `src/`):
+
+- `Tensor`: Base class for all tensors.
+- `AutoGrad`: Class for automatic differentiation.
+- `Operations`: Header for all the supported tensor operations.
+
+To use the library in C++, simply include the necessary header `#include <tensorlib/tensorlib.hpp>` and link the necessary libraries.
+
+To use the library in Python, simply import the necessary modules `import tensorlib`.
+
+## Build Instructions
 
 First run
 
@@ -19,6 +26,10 @@ sh build.sh
 
 which creates a build directory with the .so file, then set the PythonPath:
 
+### Python
+
+For python, set the `PYTHONPATH` to the build directory:
+
 ```bash
 export PYTHONPATH=$(pwd)/build:$PYTHONPATH
 ```
@@ -27,19 +38,19 @@ Afterwards, you can use tensorlib by `import tensorlib`, see [example.py](exampl
 
 ### C++(Cuda)
 
-For any c++ file, simply link the nessesary libraries:
+For any C++ file, simply link the nessesary libraries:
 
 ```sh
 nvcc example/example.cpp -Iinclude/ -Lbuild/ -ltensorlib_cpp -lopenblas -lcudart -lcublas -o example/example
 ```
 
-and then run:
+for example, to run the example, run:
 
 ```sh
 ./example/example
 ```
 
-see [example.cpp](example/example.cpp) for a use case.
+see [example.cpp](example/example.cpp) for a sample use case for `TensorLib`.
 
 ## Tensor Operations
 
@@ -133,3 +144,12 @@ Training completed.
 - [OpenBLAS](https://www.openblas.net/), for CPU implementation of many matrix operations.
 - [CUDA](https://developer.nvidia.com/cuda-downloads), for GPU implementation of many operations.
 - [CuBLAS](https://developer.nvidia.com/cublas), for GPU implementation of many matrix operations.
+
+## Task List
+
+- [x] Implement computational graph.
+- [x] Implement backprop by extending computational graph.
+- [x] Fix memory leakage due to circular dependency (sharedptr).
+- [x] CPU implementation for most tensor functions.
+- [x] GPU implementation for most tensor functions.
+- [x] Simple neural network implementation.

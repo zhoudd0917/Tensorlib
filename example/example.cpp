@@ -25,9 +25,6 @@ int main() {
   cout << "w: " << w->to_string() << endl;
   cout << "l: " << l->to_string() << endl;
 
-  //   variable init_grad_w = make_shared<Tensor>(
-  //       vector<float>{1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f},
-  //       vector<size_t>{2, 4}, device);
   variable init_grad_l =
       TensorFactory::randn(l->shape(), 0.0f, 1.0f, device, false);
 

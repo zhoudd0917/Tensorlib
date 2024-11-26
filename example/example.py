@@ -1,89 +1,33 @@
 import tensorlib as tl
-from tensorlib import Device
-import numpy as np
 
-device = Device.CPU  # Change to Device.CPU if needed
+device = tl.Device.GPU
 
 x = tl.Tensor(
-    np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0]).reshape(
-        [2,2,3]
-    ),
+    [[[1.0, 2.0, 3.0], [10.0, 11.0, 12.0]], [[20.0, 21.0, 22.0], [30.0, 31.0, 32.0]]],
+    device,
     requires_grad=True,
-    device=device,
 )
 
 y = tl.Tensor(
-    np.array(
-        [
-            2.0,
-            3.0,
-            4.0,
-            5.0,
-            6.0,
-            7.0,
-            8.0,
-            9.0,
-            10.0,
-            11.0,
-            12.0,
-            13.0,
-            14.0,
-            15.0,
-            16.0,
-            17.0,
-            18.0,
-            19.0,
-            20.0,
-            21.0,
-            22.0,
-            23.0,
-            24.0,
-            -2.0,
-        ]
-    ).reshape(2, 3, 4),
-    requires_grad=True,
-    device=device,
+    [[[1.0], [-2.0], [5.0]], [[3.0], [2.0], [1.0]]], device, requires_grad=True
 )
 
 z = tl.matmul(x, y)
-w = tl.relu(z)
+w = tl.log(z)
+l = tl.sum(w, axis=1)
 
-# Print tensors
 print("x: ", x)
 print("y: ", y)
 print("z: ", z)
 print("w: ", w)
+print("l: ", l)
 
-# Initialize the gradient for w
-init_grad_w = tl.Tensor(
-    np.array(
-        [
-            1.0,
-            2.0,
-            3.0,
-            4.0,
-            5.0,
-            6.0,
-            7.0,
-            8.0,
-            9.0,
-            10.0,
-            11.0,
-            12.0,
-            13.0,
-            14.0,
-            15.0,
-            16.0,
-        ]
-    ).reshape(2, 2, 4),
-    device=device,
-)
+init_grad_l = tl.randn(l.shape, 0.0, 1.0, device, requires_grad=False)
 
-# Perform backward pass for gradient calculation
-w.backward(init_grad_w)
+l.backward(init_grad_l)
 
-# Print gradients
-print("z grad: ", z.grad)
+print("l grad: ", l.grad)
 print("w grad: ", w.grad)
+print("z grad: ", z.grad)
 print("y grad: ", y.grad)
 print("x grad: ", x.grad)
