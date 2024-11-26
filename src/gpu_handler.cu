@@ -319,3 +319,19 @@ void GPUHandler::reshape(const float* input, float* output, size_t size) {
   // Synchronize to ensure the operation is complete
   checkCudaErrors(cudaDeviceSynchronize());
 }
+
+__global__ void logBackwardKernel(const float* output_grad, const float* x_data, float* x_grad, size_t size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        x_grad[idx] += output_grad[idx] / x_data[idx];  // Gradient of log(x)
+    }
+}
+
+void GPUHandler::logBackward(const float* output_grad, const float* x_data, float* x_grad, size_t size) {
+    int blockSize = 256;
+    int gridSize = (size + blockSize - 1) / blockSize;
+
+    logBackwardKernel<<<gridSize, blockSize>>>(output_grad, x_data, x_grad, size);
+
+    checkCudaErrors(cudaDeviceSynchronize());
+}
