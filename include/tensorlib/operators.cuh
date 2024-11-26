@@ -1,9 +1,7 @@
 #ifndef OPERATORS_HPP
 #define OPERATORS_HPP
 
-#include <memory>
-
-#include "utils.hpp"
+#include <tensorlib/types.hpp>
 
 class Tensor;
 

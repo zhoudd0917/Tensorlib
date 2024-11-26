@@ -1,8 +1,7 @@
-#include "utils.hpp"
-
 #include <algorithm>
-
-#include "tensor.cuh"
+#include <tensorlib/node.cuh>
+#include <tensorlib/tensor.cuh>
+#include <tensorlib/utils.hpp>
 
 size_t convert_to_index(size_t index, variable t) {
   const std::vector<size_t>&shape = t->shape(), &stride = t->stride();
@@ -14,6 +13,14 @@ size_t convert_to_index(size_t index, variable t) {
     result += coord * stride[dim];
   }
   return result;
+}
+
+size_t calculate_size(const std::vector<size_t>& shape) {
+  size_t size = 1;
+  for (auto& s : shape) {
+    size *= s;
+  }
+  return size;
 }
 
 void check_tensor_shape(const variable& x, const variable& y) {

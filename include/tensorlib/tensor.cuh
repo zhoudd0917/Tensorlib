@@ -3,10 +3,8 @@
 
 #include <memory>
 #include <string>
+#include <tensorlib/types.hpp>
 #include <vector>
-
-#include "node.cuh"
-#include "utils.hpp"
 
 class AutogradMeta;
 

@@ -2,8 +2,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "operators.cuh"
-#include "tensor.cuh"
+#include <tensorlib/operators.cuh>
+#include <tensorlib/tensor.cuh>
 
 namespace py = pybind11;
 

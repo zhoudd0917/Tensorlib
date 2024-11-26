@@ -1,4 +1,4 @@
-#include "cublas_handler.cuh"
+#include <tensorlib/cublas_handler.cuh>
 
 CublasHandler& CublasHandler::getInstance() {
   static CublasHandler instance;
@@ -60,9 +60,6 @@ void CublasHandler::divide(const float* x, const float* y, float* z,
 
 // helper method for SubBackward
 void CublasHandler::axpy(const float* x, float* y, float alpha, size_t size) {
-    cublasHandle_t handle = getInstance().getHandle();
-    checkCublasErrors(cublasSaxpy(handle, size, &alpha, x, 1, y, 1));
+  cublasHandle_t handle = getInstance().getHandle();
+  checkCublasErrors(cublasSaxpy(handle, size, &alpha, x, 1, y, 1));
 }
-
-
-

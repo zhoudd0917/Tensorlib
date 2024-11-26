@@ -1,4 +1,4 @@
-#include "cpu_handler.hpp"
+#include "tensorlib/cpu_handler.hpp"
 
 #include <cblas.h>
 #include <omp.h>
@@ -36,8 +36,9 @@ void CPUHandler::div(float* X, float* Y, float* Z, size_t size) {
 
 // transpose a matrix of shape (B, M, N) to (B, N, M)
 void CPUHandler::transpose(float* X, float* Y, size_t B, size_t M, size_t N) {
-  for (size_t b = 0 ; b < B; ++b){
-    cblas_somatcopy(CblasRowMajor, CblasTrans, M, N, 1.0f, &X[b * M * N], N, &Y[b * N * M], M);
+  for (size_t b = 0; b < B; ++b) {
+    cblas_somatcopy(CblasRowMajor, CblasTrans, M, N, 1.0f, &X[b * M * N], N,
+                    &Y[b * N * M], M);
   }
 }
 

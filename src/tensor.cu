@@ -1,9 +1,10 @@
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
-
-#include "autograd.hpp"
-#include "tensor.cuh"
+#include <tensorlib/autograd.hpp>
+#include <tensorlib/node.cuh>
+#include <tensorlib/tensor.cuh>
+#include <tensorlib/utils.hpp>
 
 // Constructor for 1D tensor
 Tensor::Tensor(std::vector<float> data, std::vector<size_t> shape,
@@ -62,6 +63,8 @@ Tensor::Tensor(std::vector<size_t> shape, Device device, bool requires_grad)
   // Allocate memory based on device
   if (device == Device::CPU) {
     data_ = new float[size]();
+    // set to zero
+    std::fill(data_, data_ + size, 0);
   } else if (device == Device::GPU) {
     cudaMalloc(&data_, size * sizeof(float));
     cudaMemset(data_, 0, size * sizeof(float));

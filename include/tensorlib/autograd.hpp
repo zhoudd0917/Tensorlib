@@ -3,8 +3,6 @@
 
 #include <memory>
 
-#include "node.cuh"
-
 class Node;
 class Tensor;
 

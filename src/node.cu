@@ -1,11 +1,10 @@
 #include <set>
-
-#include "autograd.hpp"
-#include "cpu_handler.hpp"
-#include "cublas_handler.cuh"
-#include "node.cuh"
-#include "tensor.cuh"
-#include "utils.hpp"
+#include <tensorlib/autograd.hpp>
+#include <tensorlib/cpu_handler.hpp>
+#include <tensorlib/cublas_handler.cuh>
+#include <tensorlib/node.cuh>
+#include <tensorlib/tensor.cuh>
+#include <tensorlib/utils.hpp>
 
 void Node::set_next_edges() {
   // to ensure no duplicate nodes

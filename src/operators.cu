@@ -1,9 +1,10 @@
-#include "autograd.hpp"
-#include "cpu_handler.hpp"
-#include "cublas_handler.cuh"
-#include "operators.cuh"
-#include "tensor.cuh"
-#include "utils.hpp"
+#include <tensorlib/autograd.hpp>
+#include <tensorlib/cpu_handler.hpp>
+#include <tensorlib/cublas_handler.cuh>
+#include <tensorlib/node.cuh>
+#include <tensorlib/operators.cuh>
+#include <tensorlib/tensor.cuh>
+#include <tensorlib/utils.hpp>
 
 variable operator+(const variable& x, const variable& y) {
   check_tensor_shape(x, y);

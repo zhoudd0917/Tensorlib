@@ -3,9 +3,9 @@
 #define NODE_HPP
 
 #include <memory>
+#include <string>
+#include <tensorlib/types.hpp>
 #include <vector>
-
-#include "utils.hpp"
 
 class Edge;
 class Node;
