@@ -128,3 +128,71 @@ void GPUHandler::select_idx(float* X, float* Z, std::vector<size_t> x_shape,
 
   checkCudaErrors(cudaDeviceSynchronize());
 }
+
+// exp
+__global__ void elementWiseExp(const float* input, float* output, size_t size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        output[idx] = expf(input[idx]);
+    }
+}
+
+void GPUHandler::exp(const float* input, float* output, size_t size) {
+    int blockSize = 256;
+    int gridSize = (size + blockSize - 1) / blockSize;
+
+    elementWiseExp<<<gridSize, blockSize>>>(input, output, size);
+
+    checkCudaErrors(cudaDeviceSynchronize());
+}
+
+// sin
+__global__ void elementWiseSin(const float* input, float* output, size_t size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        output[idx] = sinf(input[idx]);  // Compute sine
+    }
+}
+
+void GPUHandler::sin(const float* input, float* output, size_t size) {
+    int blockSize = 256;
+    int gridSize = (size + blockSize - 1) / blockSize;
+
+    elementWiseSin<<<gridSize, blockSize>>>(input, output, size);
+
+    checkCudaErrors(cudaDeviceSynchronize());
+}
+
+// cos
+__global__ void elementWiseCos(const float* input, float* output, size_t size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        output[idx] = cosf(input[idx]);  // Compute cosine
+    }
+}
+
+void GPUHandler::cos(const float* input, float* output, size_t size) {
+    int blockSize = 256;
+    int gridSize = (size + blockSize - 1) / blockSize;
+
+    elementWiseCos<<<gridSize, blockSize>>>(input, output, size);
+
+    checkCudaErrors(cudaDeviceSynchronize());
+}
+
+// relu
+__global__ void elementWiseReLU(const float* input, float* output, size_t size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        output[idx] = fmaxf(0.0f, input[idx]);  // Compute ReLU
+    }
+}
+
+void GPUHandler::relu(const float* input, float* output, size_t size) {
+    int blockSize = 256;
+    int gridSize = (size + blockSize - 1) / blockSize;
+
+    elementWiseReLU<<<gridSize, blockSize>>>(input, output, size);
+
+    checkCudaErrors(cudaDeviceSynchronize());
+}

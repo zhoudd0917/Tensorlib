@@ -386,7 +386,7 @@ variable exp(variable x) {
   if (device == Device::CPU) {
     CPUHandler::exp(x->data(), z->data(), x->size());
   } else if (device == Device::GPU) {
-    throw std::runtime_error("Not implemented for GPU");
+    GPUHandler::exp(x->data(), z->data(), x->size());
   }
 
   if (x->requires_grad()) {
@@ -404,7 +404,7 @@ variable sin(variable x) {
   if (device == Device::CPU) {
     CPUHandler::sin(x->data(), z->data(), x->size());
   } else if (device == Device::GPU) {
-    throw std::runtime_error("Not implemented for GPU");
+    GPUHandler::sin(x->data(), z->data(), x->size());
   }
 
   if (x->requires_grad()) {
@@ -422,7 +422,7 @@ variable cos(variable x) {
   if (device == Device::CPU) {
     CPUHandler::cos(x->data(), z->data(), x->size());
   } else if (device == Device::GPU) {
-    throw std::runtime_error("Not implemented for GPU");
+    GPUHandler::cos(x->data(), z->data(), x->size());
   }
 
   if (x->requires_grad()) {
@@ -440,7 +440,7 @@ variable relu(variable x) {
   if (device == Device::CPU) {
     CPUHandler::relu(x->data(), z->data(), x->size());
   } else if (device == Device::GPU) {
-    throw std::runtime_error("Not implemented for GPU");
+    GPUHandler::relu(x->data(), z->data(), x->size());
   }
 
   if (x->requires_grad()) {

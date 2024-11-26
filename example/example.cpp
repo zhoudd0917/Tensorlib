@@ -16,8 +16,8 @@ int main() {
                             vector<size_t>{2, 3, 1}, device, true);
 
   variable z = matmul(x, y);
-  variable w = z + z;
-  variable l = log(w);
+  variable w = cos(y);
+  variable l = relu(y);
 
   cout << "x: " << x->to_string() << endl;
   cout << "y: " << y->to_string() << endl;
