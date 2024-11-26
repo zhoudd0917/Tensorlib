@@ -38,6 +38,7 @@ class GPUHandler {
                      bool transY = false);
   static void transpose(const float* input, float* output, size_t B, size_t M,
                         size_t N);
+  static void log(const float* input, float* output, size_t size);
 
   cublasHandle_t getHandle() { return handle; }
 

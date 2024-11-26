@@ -199,7 +199,7 @@ variable log(const variable& x) {
   if (device == Device::CPU) {
     CPUHandler::log(x->data(), z->data(), x->size());
   } else if (device == Device::GPU) {
-    throw std::runtime_error("Not implemented for GPU");
+    GPUHandler::log(x->data(), z->data(), x->size());
   }
 
   if (x->requires_grad()) {

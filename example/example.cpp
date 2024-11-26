@@ -19,7 +19,7 @@ int main() {
 
   variable z = matmul(x, y);
   variable w = z + z;
-  variable l = transpose(w);
+  variable l = log(w);
 
   cout << "x: " << x->to_string() << endl;
   cout << "y: " << y->to_string() << endl;
