@@ -55,6 +55,8 @@ class GPUHandler {
                        std::vector<size_t> x_stride, size_t axis,
                        size_t axis_size, float factor);
   static void reshape(const float* input, float* output, size_t size);
+  static void expBackward(const float* output_grad, const float* x_data, float* x_grad, size_t size);
+  static void sinBackward(const float* output_grad, const float* x_data, float* x_grad, size_t size);
 
   cublasHandle_t getHandle() { return handle; }
 

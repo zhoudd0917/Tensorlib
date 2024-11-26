@@ -337,3 +337,41 @@ void GPUHandler::logBackward(const float* output_grad, const float* x_data,
 
   checkCudaErrors(cudaDeviceSynchronize());
 }
+
+// exp back
+__global__ void expBackwardKernel(const float* output_grad, const float* x_data, float* x_grad, size_t size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        x_grad[idx] += output_grad[idx] * expf(x_data[idx]);  // Gradient computation
+    }
+}
+
+void GPUHandler::expBackward(const float* output_grad, const float* x_data, float* x_grad, size_t size) {
+    int blockSize = 256;  // Number of threads per block
+    int gridSize = (size + blockSize - 1) / blockSize;  // Number of blocks
+
+    // Launch the kernel
+    expBackwardKernel<<<gridSize, blockSize>>>(output_grad, x_data, x_grad, size);
+
+    // Synchronize and check for CUDA errors
+    checkCudaErrors(cudaDeviceSynchronize());
+}
+
+// sin back
+__global__ void sinBackwardKernel(const float* output_grad, const float* x_data, float* x_grad, size_t size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        x_grad[idx] += output_grad[idx] * cosf(x_data[idx]);  // Gradient computation
+    }
+}
+
+void GPUHandler::sinBackward(const float* output_grad, const float* x_data, float* x_grad, size_t size) {
+    int blockSize = 256;  // Number of threads per block
+    int gridSize = (size + blockSize - 1) / blockSize;  // Number of blocks
+
+    // Launch the kernel
+    sinBackwardKernel<<<gridSize, blockSize>>>(output_grad, x_data, x_grad, size);
+
+    // Synchronize and check for CUDA errors
+    checkCudaErrors(cudaDeviceSynchronize());
+}

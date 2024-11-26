@@ -440,7 +440,7 @@ void ExpBackward::apply() {
         x_grad[i] += output_grad[i] * std::exp(x->data()[i]);
       }
     } else if (device == Device::GPU) {
-      std::runtime_error("Not implemented for GPU");
+      GPUHandler::expBackward(output_grad, x->data(), x_grad, x_grad_tensor->size());
     }
   }
 }
@@ -474,7 +474,7 @@ void SinBackward::apply() {
         x_grad[i] += output_grad[i] * std::cos(x->data()[i]);
       }
     } else if (device == Device::GPU) {
-      std::runtime_error("Not implemented for GPU");
+      GPUHandler::sinBackward(output_grad, x->data(), x_grad, x_grad_tensor->size());
     }
   }
 }
