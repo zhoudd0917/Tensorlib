@@ -1,6 +1,6 @@
 #include <tensorlib/autograd.hpp>
 #include <tensorlib/cpu_handler.hpp>
-#include <tensorlib/cublas_handler.cuh>
+#include <tensorlib/gpu_handler.cuh>
 #include <tensorlib/node.cuh>
 #include <tensorlib/operators.cuh>
 #include <tensorlib/tensor.cuh>
@@ -18,7 +18,7 @@ variable operator+(const variable& x, const variable& y) {
   if (device == Device::CPU) {
     CPUHandler::add(x->data(), y->data(), z->data(), x->size());
   } else if (device == Device::GPU) {
-    CublasHandler::add(x->data(), y->data(), z->data(), x->size());
+    GPUHandler::add(x->data(), y->data(), z->data(), x->size());
   }
 
   if (require_grad) {
@@ -40,7 +40,7 @@ variable operator-(const variable& x, const variable& y) {
   if (device == Device::CPU) {
     CPUHandler::sub(x->data(), y->data(), z->data(), x->size());
   } else if (device == Device::GPU) {
-    CublasHandler::sub(x->data(), y->data(), z->data(), x->size());
+    GPUHandler::sub(x->data(), y->data(), z->data(), x->size());
   }
 
   if (require_grad) {
@@ -62,7 +62,7 @@ variable operator*(const variable& x, const variable& y) {
   if (device == Device::CPU) {
     CPUHandler::mul(x->data(), y->data(), z->data(), x->size());
   } else if (device == Device::GPU) {
-    CublasHandler::multiply(x->data(), y->data(), z->data(), x->size());
+    GPUHandler::multiply(x->data(), y->data(), z->data(), x->size());
   }
 
   if (require_grad) {
@@ -84,7 +84,7 @@ variable operator/(const variable& x, const variable& y) {
   if (device == Device::CPU) {
     CPUHandler::div(x->data(), y->data(), z->data(), x->size());
   } else if (device == Device::GPU) {
-    CublasHandler::divide(x->data(), y->data(), z->data(), x->size());
+    GPUHandler::divide(x->data(), y->data(), z->data(), x->size());
   }
 
   if (require_grad) {
@@ -140,7 +140,7 @@ variable matmul(const variable& x, const variable& y) {
   if (device == Device::CPU) {
     CPUHandler::matmul(x->data(), y->data(), z->data(), B, M, K, N);
   } else if (device == Device::GPU) {
-    CublasHandler::matmul(x->data(), y->data(), z->data(), B, M, K, N);
+    GPUHandler::matmul(x->data(), y->data(), z->data(), B, M, K, N);
   }
 
   if (require_grad) {

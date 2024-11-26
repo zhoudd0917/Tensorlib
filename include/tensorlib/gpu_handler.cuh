@@ -24,9 +24,9 @@
 
 class Tensor;
 
-class CublasHandler {
+class GPUHandler {
  public:
-  static CublasHandler& getInstance();
+  static GPUHandler& getInstance();
 
   static void add(const float* x, const float* y, float* z, size_t size);
   static void sub(const float* x, const float* y, float* z, size_t size);
@@ -39,18 +39,18 @@ class CublasHandler {
 
   cublasHandle_t getHandle() { return handle; }
 
-  CublasHandler(const CublasHandler&) = delete;
-  CublasHandler& operator=(const CublasHandler&) = delete;
+  GPUHandler(const GPUHandler&) = delete;
+  GPUHandler& operator=(const GPUHandler&) = delete;
 
  private:
   cublasHandle_t handle;
 
-  CublasHandler() {
+  GPUHandler() {
     if (cublasCreate(&handle) != CUBLAS_STATUS_SUCCESS) {
       throw std::runtime_error("Failed to create cuBLAS handle");
     }
   }
 
-  ~CublasHandler() { cublasDestroy(handle); }
+  ~GPUHandler() { cublasDestroy(handle); }
 };
 #endif

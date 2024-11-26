@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(PYTHON_MODULE_NAME tensorlib)
 set(CPP_LIBRARY_NAME tensorlib_cpp)
 
-set(CUDA_SOURCES src/tensor.cu src/cublas_handler.cu src/node.cu src/operators.cu)
+set(CUDA_SOURCES src/tensor.cu src/gpu_handler.cu src/node.cu src/operators.cu)
 set(CPP_SOURCES src/autograd.cpp src/cpu_handler.cpp src/utils.cpp src/tensor_factory.cpp)
 
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)

@@ -1,1 +1,0 @@
-nvcc utils.cpp autograd.cpp cpu_handler.cpp cublas_handler.cu node.cu tensor.cu operators.cu test.cpp -o test -std=c++17 -O1 -Xcompiler="-fPIC -fopenmp -lopenblas" -lcublas

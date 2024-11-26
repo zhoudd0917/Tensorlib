@@ -1,7 +1,7 @@
 #include <set>
 #include <tensorlib/autograd.hpp>
 #include <tensorlib/cpu_handler.hpp>
-#include <tensorlib/cublas_handler.cuh>
+#include <tensorlib/gpu_handler.cuh>
 #include <tensorlib/node.cuh>
 #include <tensorlib/tensor.cuh>
 #include <tensorlib/utils.hpp>
@@ -53,7 +53,7 @@ void AddBackward::apply() {
     if (device == Device::CPU) {
       CPUHandler::add(output_grad, x_grad, x_grad, x_grad_tensor->size());
     } else if (device == Device::GPU) {
-      CublasHandler::add(output_grad, x_grad, x_grad, x_grad_tensor->size());
+      GPUHandler::add(output_grad, x_grad, x_grad, x_grad_tensor->size());
     }
   }
 
@@ -69,7 +69,7 @@ void AddBackward::apply() {
     if (device == Device::CPU) {
       CPUHandler::add(output_grad, y_grad, y_grad, y_grad_tensor->size());
     } else if (device == Device::GPU) {
-      CublasHandler::add(output_grad, y_grad, y_grad, y_grad_tensor->size());
+      GPUHandler::add(output_grad, y_grad, y_grad, y_grad_tensor->size());
     }
   }
 }
@@ -103,7 +103,7 @@ void SubBackward::apply() {
       CPUHandler::add(output_grad, x_grad, x_grad, x_grad_tensor->size());
     } else if (device == Device::GPU) {
       // ignoring strides for now
-      CublasHandler::add(output_grad, x_grad, x_grad, x_grad_tensor->size());
+      GPUHandler::add(output_grad, x_grad, x_grad, x_grad_tensor->size());
     }
   }
 
@@ -120,7 +120,7 @@ void SubBackward::apply() {
     } else if (device == Device::GPU) {
       // Gradient for y with subtraction
       float alpha = -1.0f;
-      CublasHandler::axpy(output_grad, y_grad, alpha, y_grad_tensor->size());
+      GPUHandler::axpy(output_grad, y_grad, alpha, y_grad_tensor->size());
     }
   }
 }
@@ -158,8 +158,7 @@ void MulBackward::apply() {
     } else if (device == Device::GPU) {
       // GPU logic for x gradient: x_grad += output_grad * y
       float* y_data = y->data();
-      CublasHandler::multiply(output_grad, y_data, x_grad,
-                              x_grad_tensor->size());
+      GPUHandler::multiply(output_grad, y_data, x_grad, x_grad_tensor->size());
     }
   }
 
@@ -177,8 +176,7 @@ void MulBackward::apply() {
     } else if (device == Device::GPU) {
       // GPU logic for y gradient: y_grad += output_grad * x
       float* x_data = x->data();
-      CublasHandler::multiply(output_grad, x_data, y_grad,
-                              y_grad_tensor->size());
+      GPUHandler::multiply(output_grad, x_data, y_grad, y_grad_tensor->size());
     }
   }
 }
@@ -214,8 +212,7 @@ void DivBackward::apply() {
       }
     } else if (device == Device::GPU) {
       // Use the divide utility to compute x_grad += output_grad / y
-      CublasHandler::divide(output_grad, y->data(), x_grad,
-                            x_grad_tensor->size());
+      GPUHandler::divide(output_grad, y->data(), x_grad, x_grad_tensor->size());
     }
   }
 
@@ -238,15 +235,14 @@ void DivBackward::apply() {
           cudaMalloc(&temp_grad_x, y_grad_tensor->size() * sizeof(float)));
 
       // Compute output_grad * x and store in temp_grad_x
-      CublasHandler::multiply(output_grad, x->data(), temp_grad_x,
-                              y_grad_tensor->size());
+      GPUHandler::multiply(output_grad, x->data(), temp_grad_x,
+                           y_grad_tensor->size());
 
       // Compute temp_grad_x / (y^2) and store in y_grad
-      CublasHandler::divide(temp_grad_x, y->data(), y_grad,
-                            y_grad_tensor->size());
+      GPUHandler::divide(temp_grad_x, y->data(), y_grad, y_grad_tensor->size());
 
       // Multiply y_grad by -1 (axpy helper can be used)
-      CublasHandler::axpy(y_grad, y_grad, -1.0, y_grad_tensor->size());
+      GPUHandler::axpy(y_grad, y_grad, -1.0, y_grad_tensor->size());
 
       // Free the temporary buffer
       checkCudaErrors(cudaFree(temp_grad_x));
@@ -295,8 +291,8 @@ void MatmulBackward::apply() {
       CPUHandler::matmul(output_grad, y->data(), x_grad, B, M, N, K, false,
                          true);
     } else if (device == Device::GPU) {
-      CublasHandler::matmul(output_grad, y->data(), x_grad, B, M, N, K, false,
-                            true);
+      GPUHandler::matmul(output_grad, y->data(), x_grad, B, M, N, K, false,
+                         true);
     }
   }
 
@@ -310,8 +306,8 @@ void MatmulBackward::apply() {
       CPUHandler::matmul(x->data(), output_grad, y_grad, B, K, M, N, true,
                          false);
     } else if (device == Device::GPU) {
-      CublasHandler::matmul(x->data(), output_grad, y_grad, B, K, M, N, true,
-                            false);
+      GPUHandler::matmul(x->data(), output_grad, y_grad, B, K, M, N, true,
+                         false);
     }
   }
 }
