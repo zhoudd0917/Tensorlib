@@ -123,98 +123,212 @@ void GPUHandler::select_idx(float* X, float* Z, std::vector<size_t> x_shape,
 
   int blockSize = 256;
   int gridSize = (size + blockSize - 1) / blockSize;
-
   selectIdx<<<gridSize, blockSize>>>(X, Z, size, idx);
 
   checkCudaErrors(cudaDeviceSynchronize());
 }
 
+__device__ size_t d_calculate_index_after_drop_axis(size_t index, size_t axis,
+                                                    const size_t* shape,
+                                                    size_t nDims) {
+  size_t newIndex = 0;
+  size_t stride = 1;
+
+  for (int i = nDims; i > 0; i--) {
+    if (i - 1 != axis) {
+      size_t dimSize = shape[i - 1];
+      size_t currentDimIndex = index % dimSize;
+      newIndex += currentDimIndex * stride;
+      stride *= dimSize;
+    }
+    index /= shape[i - 1];
+  }
+  return newIndex;
+}
+
+__global__ void sumAlongAxisKernel(float* X, float* Z, const size_t* shape,
+                                   size_t axis, size_t input_size,
+                                   size_t nDims) {
+  unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if (i < input_size) {
+    size_t output_idx =
+        d_calculate_index_after_drop_axis(i, axis, shape, nDims);
+    atomicAdd(&Z[output_idx], X[i]);
+  }
+}
+
+void GPUHandler::sum(float* X, float* Z, std::vector<size_t> x_shape,
+                     size_t axis) {
+  size_t input_size = calculate_size(x_shape);
+  size_t output_size = input_size / x_shape[axis];
+
+  size_t* d_x_shape;
+  cudaMalloc(&d_x_shape, x_shape.size() * sizeof(size_t));
+  cudaMemcpy(d_x_shape, x_shape.data(), x_shape.size() * sizeof(size_t),
+             cudaMemcpyHostToDevice);
+
+  int blockSize = 256;
+  int numBlocks = (input_size + blockSize - 1) / blockSize;
+  cudaMemset(Z, 0, output_size * sizeof(float));
+  sumAlongAxisKernel<<<numBlocks, blockSize>>>(X, Z, d_x_shape, axis,
+                                               input_size, output_size);
+
+  cudaFree(d_x_shape);
+}
+
+__device__ size_t d_calculate_index_after_add_axis(size_t index, size_t axis,
+                                                   const size_t* shape,
+                                                   size_t nDims) {
+  size_t new_index = 0;
+  size_t old_stride = 1, new_stride = 1;
+
+  for (int i = nDims; i > 0; i--) {
+    size_t dim_size = shape[i - 1];
+    if (i - 1 != axis) {
+      size_t c_i = index % dim_size;
+      new_index += c_i * new_stride;
+      new_stride *= dim_size;
+      old_stride *= dim_size;
+      index /= dim_size;
+    } else {
+      new_stride *= dim_size;
+    }
+  }
+  return new_index;
+}
+
+__global__ void addAxisKernel(float* x_grad, const float* output_grad,
+                              const size_t* x_shape, const size_t* x_stride,
+                              size_t axis, size_t axis_size, float factor,
+                              size_t size, size_t nDims) {
+  unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if (i < size) {
+    size_t input_idx =
+        d_calculate_index_after_add_axis(i, axis, x_shape, nDims);
+
+    for (size_t j = 0; j < axis_size; j++) {
+      x_grad[input_idx] += output_grad[i] * factor;
+      input_idx += x_stride[axis];
+    }
+  }
+}
+
+void GPUHandler::add_axis(float* x_grad, const float* output_grad,
+                          std::vector<size_t> x_shape,
+                          std::vector<size_t> x_stride, size_t axis,
+                          size_t axis_size, float factor) {
+  size_t size = calculate_size(x_shape);
+  size_t nDims = x_shape.size();
+
+  size_t *d_x_shape, *d_x_stride;
+  cudaMalloc(&d_x_shape, nDims * sizeof(size_t));
+  cudaMalloc(&d_x_stride, nDims * sizeof(size_t));
+
+  cudaMemcpy(d_x_shape, x_shape.data(), nDims * sizeof(size_t),
+             cudaMemcpyHostToDevice);
+  cudaMemcpy(d_x_stride, x_stride.data(), nDims * sizeof(size_t),
+             cudaMemcpyHostToDevice);
+
+  cudaMemset(x_grad, 0, size * sizeof(float));
+
+  int blockSize = 256;
+  int numBlocks = (size + blockSize - 1) / blockSize;
+  addAxisKernel<<<numBlocks, blockSize>>>(x_grad, output_grad, d_x_shape,
+                                          d_x_stride, axis, axis_size, factor,
+                                          size, nDims);
+
+  cudaFree(d_x_shape);
+  cudaFree(d_x_stride);
+}
+
 // exp
 __global__ void elementWiseExp(const float* input, float* output, size_t size) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < size) {
-        output[idx] = expf(input[idx]);
-    }
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if (idx < size) {
+    output[idx] = expf(input[idx]);
+  }
 }
 
 void GPUHandler::exp(const float* input, float* output, size_t size) {
-    int blockSize = 256;
-    int gridSize = (size + blockSize - 1) / blockSize;
+  int blockSize = 256;
+  int gridSize = (size + blockSize - 1) / blockSize;
 
-    elementWiseExp<<<gridSize, blockSize>>>(input, output, size);
+  elementWiseExp<<<gridSize, blockSize>>>(input, output, size);
 
-    checkCudaErrors(cudaDeviceSynchronize());
+  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 // sin
 __global__ void elementWiseSin(const float* input, float* output, size_t size) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < size) {
-        output[idx] = sinf(input[idx]);  // Compute sine
-    }
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if (idx < size) {
+    output[idx] = sinf(input[idx]);  // Compute sine
+  }
 }
 
 void GPUHandler::sin(const float* input, float* output, size_t size) {
-    int blockSize = 256;
-    int gridSize = (size + blockSize - 1) / blockSize;
+  int blockSize = 256;
+  int gridSize = (size + blockSize - 1) / blockSize;
 
-    elementWiseSin<<<gridSize, blockSize>>>(input, output, size);
+  elementWiseSin<<<gridSize, blockSize>>>(input, output, size);
 
-    checkCudaErrors(cudaDeviceSynchronize());
+  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 // cos
 __global__ void elementWiseCos(const float* input, float* output, size_t size) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < size) {
-        output[idx] = cosf(input[idx]);  // Compute cosine
-    }
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if (idx < size) {
+    output[idx] = cosf(input[idx]);  // Compute cosine
+  }
 }
 
 void GPUHandler::cos(const float* input, float* output, size_t size) {
-    int blockSize = 256;
-    int gridSize = (size + blockSize - 1) / blockSize;
+  int blockSize = 256;
+  int gridSize = (size + blockSize - 1) / blockSize;
 
-    elementWiseCos<<<gridSize, blockSize>>>(input, output, size);
+  elementWiseCos<<<gridSize, blockSize>>>(input, output, size);
 
-    checkCudaErrors(cudaDeviceSynchronize());
+  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 // relu
-__global__ void elementWiseReLU(const float* input, float* output, size_t size) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < size) {
-        output[idx] = fmaxf(0.0f, input[idx]);  // Compute ReLU
-    }
+__global__ void elementWiseReLU(const float* input, float* output,
+                                size_t size) {
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if (idx < size) {
+    output[idx] = fmaxf(0.0f, input[idx]);  // Compute ReLU
+  }
 }
 
 void GPUHandler::relu(const float* input, float* output, size_t size) {
-    int blockSize = 256;
-    int gridSize = (size + blockSize - 1) / blockSize;
+  int blockSize = 256;
+  int gridSize = (size + blockSize - 1) / blockSize;
 
-    elementWiseReLU<<<gridSize, blockSize>>>(input, output, size);
+  elementWiseReLU<<<gridSize, blockSize>>>(input, output, size);
 
-    checkCudaErrors(cudaDeviceSynchronize());
+  checkCudaErrors(cudaDeviceSynchronize());
 }
 
-//reshape
+// reshape
 __global__ void reshapeKernel(const float* input, float* output, size_t size) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (idx < size) {
-        // Direct copy since the data layout doesn't change during reshape
-        output[idx] = input[idx];
-    }
+  if (idx < size) {
+    // Direct copy since the data layout doesn't change during reshape
+    output[idx] = input[idx];
+  }
 }
 
 void GPUHandler::reshape(const float* input, float* output, size_t size) {
-    int blockSize = 256;
-    int gridSize = (size + blockSize - 1) / blockSize;
+  int blockSize = 256;
+  int gridSize = (size + blockSize - 1) / blockSize;
 
-    // Launch the kernel
-    reshapeKernel<<<gridSize, blockSize>>>(input, output, size);
+  // Launch the kernel
+  reshapeKernel<<<gridSize, blockSize>>>(input, output, size);
 
-    // Synchronize to ensure the operation is complete
-    checkCudaErrors(cudaDeviceSynchronize());
+  // Synchronize to ensure the operation is complete
+  checkCudaErrors(cudaDeviceSynchronize());
 }
-

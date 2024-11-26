@@ -4,7 +4,7 @@
 using namespace std;
 
 int main() {
-  Device device = Device::CPU;
+  Device device = Device::GPU;
   // 2d vector
   variable x = TensorFactory::create(
       vector<float>{1.0f, 2.0f, 3.0f, 10.0f, 11.0f, 12.0f, 20.0f, 21.0f, 22.0f,
@@ -16,8 +16,8 @@ int main() {
                             vector<size_t>{2, 3, 1}, device, true);
 
   variable z = matmul(x, y);
-  variable w = cos(y);
-  variable l = relu(y);
+  variable w = log(z);
+  variable l = sum(w, 1);
 
   cout << "x: " << x->to_string() << endl;
   cout << "y: " << y->to_string() << endl;

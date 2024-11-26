@@ -719,7 +719,8 @@ void SumBackward::apply() {
         }
       }
     } else if (device == Device::GPU) {
-      std::runtime_error("Not implemented for GPU");
+      GPUHandler::add_axis(x_grad, output_grad, x_shape, x_stride, axis_,
+                           axis_size, factor_);
     }
   }
 }
