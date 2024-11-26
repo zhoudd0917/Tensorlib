@@ -1,13 +1,14 @@
-import tensorlib
+import tensorlib as tl
 from tensorlib import Device
 import numpy as np
 
-x = tensorlib.Tensor([1, 2, 3, 4], shape=(2, 2), requires_grad=True, device=Device.GPU)
-y = tensorlib.Tensor([5, 6, 7, 8], shape=(2, 2), requires_grad=True, device=Device.GPU)
+x = tl.Tensor([[1, 2, 3], [4, 5, 6]], requires_grad=True, device=Device.CPU)
+y = tl.Tensor([[1, 4], [3, 1], [2, 5]], requires_grad=True, device=Device.CPU)
 
-z = x + y
-w = z + x
-w.backward(y)
+z = tl.transpose(x) + y
+w = tl.matmul(x, z)
+
+w.backward(w)
 
 print("x: ", x)
 print("y: ", y)

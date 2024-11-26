@@ -14,7 +14,8 @@ class CPUHandler {
   static void div(float* X, float* Y, float* Z, size_t size);
   static void transpose(float* X, float* Y, size_t B, size_t M, size_t N);
   static void matmul(float* X, float* Y, float* Z, size_t B, size_t M, size_t K,
-                     size_t N);
+                     size_t N, bool transpose_X = false,
+                     bool transpose_Y = false);
   static void log(float* X, float* Y, size_t size);
   static void exp(float* X, float* Y, size_t size);
   static void sin(float* X, float* Y, size_t size);

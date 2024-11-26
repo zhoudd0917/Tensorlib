@@ -30,3 +30,4 @@ and then run:
 ```sh
 ./example/example
 ```
+see [example.cpp](example/example.cpp) for a use case.

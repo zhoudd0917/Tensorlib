@@ -18,7 +18,7 @@ find_package(pybind11 REQUIRED)
 find_package(CUDAToolkit REQUIRED)
 find_package(OpenBLAS REQUIRED)
 
-pybind11_add_module(${PYTHON_MODULE_NAME} src/pybind_wrapper.cpp ${CUDA_SOURCES} ${CPP_SOURCES})
+pybind11_add_module(${PYTHON_MODULE_NAME} python/pybind_wrapper.cpp ${CUDA_SOURCES} ${CPP_SOURCES})
 
 set_target_properties(${PYTHON_MODULE_NAME} PROPERTIES 
     CUDA_ARCHITECTURES 75

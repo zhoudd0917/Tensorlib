@@ -138,12 +138,9 @@ variable matmul(const variable& x, const variable& y) {
   auto z = std::make_shared<Tensor>(shape, device, require_grad);
 
   if (device == Device::CPU) {
-    for (int i = 0; i < z->size(); ++i) {
-      z->data()[i] = 0;
-    }
     CPUHandler::matmul(x->data(), y->data(), z->data(), B, M, K, N);
   } else if (device == Device::GPU) {
-    throw std::runtime_error("Not implemented for GPU");
+    CublasHandler::matmul(x->data(), y->data(), z->data(), B, M, K, N);
   }
 
   if (require_grad) {

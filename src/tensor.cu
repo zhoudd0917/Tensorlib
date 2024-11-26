@@ -25,6 +25,7 @@ Tensor::Tensor(std::vector<float> data, std::vector<size_t> shape,
   size_t size = shape[0] * stride_[0];
 
   if (data.size() != size) {
+    std::cout << data.size() << " " << size << std::endl;
     throw std::runtime_error("Data size does not match tensor size");
   }
 

@@ -44,11 +44,16 @@ void CPUHandler::transpose(float* X, float* Y, size_t B, size_t M, size_t N) {
 
 // Matrix multiplication of X and Y with shape (B, M, K) and (B, K, N)
 void CPUHandler::matmul(float* X, float* Y, float* Z, size_t B, size_t M,
-                        size_t K, size_t N) {
+                        size_t K, size_t N, bool transpose_X,
+                        bool transpose_Y) {
+  auto trans_x = transpose_X ? CblasTrans : CblasNoTrans,
+       trans_y = transpose_Y ? CblasTrans : CblasNoTrans;
+
 #pragma omp parallel for
   for (size_t b = 0; b < B; ++b) {
-    cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, 1.0f,
-                &X[b * M * K], K, &Y[b * K * N], N, 0.0f, &Z[b * M * N], N);
+    cblas_sgemm(CblasRowMajor, trans_x, trans_y, M, N, K, 1.0f, X + b * M * K,
+                (transpose_X ? M : K), Y + b * K * N, (transpose_Y ? K : N),
+                0.0f, Z + b * M * N, N);
   }
 }
 
@@ -93,7 +98,8 @@ void CPUHandler::relu(float* X, float* Y, size_t size) {
   }
 }
 
-// select a row from a tensor X of shape x_shape and store it in Z
+// select a row from a tensor X of shape x_shape and
+// store it in Z
 void CPUHandler::select_idx(float* X, float* Z, std::vector<size_t> x_shape,
                             size_t idx) {
   size_t offset = idx;

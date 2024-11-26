@@ -292,11 +292,8 @@ void MatmulBackward::apply() {
     float* x_grad = x_grad_tensor->data();
 
     if (device == Device::CPU) {
-      float* y_transpose = new float[B * N * K];
-      CPUHandler::transpose(y->data(), y_transpose, B, K, N);
-      CPUHandler::matmul(output_grad, y_transpose, x_grad, B, M, N, K);
-
-      delete[] y_transpose;
+      CPUHandler::matmul(output_grad, y->data(), x_grad, B, M, N, K, false,
+                         true);
     } else if (device == Device::GPU) {
       std::runtime_error("Not implemented for GPU");
     }
@@ -309,11 +306,8 @@ void MatmulBackward::apply() {
     float* y_grad = y_grad_tensor->data();
 
     if (device == Device::CPU) {
-      float* x_transpose = new float[B * K * M];
-      CPUHandler::transpose(x->data(), x_transpose, B, M, K);
-      CPUHandler::matmul(x_transpose, output_grad, y_grad, B, K, M, N);
-
-      delete[] x_transpose;
+      CPUHandler::matmul(x->data(), output_grad, y_grad, B, K, M, N, true,
+                         false);
     } else if (device == Device::GPU) {
       std::runtime_error("Not implemented for GPU");
     }
