@@ -66,7 +66,7 @@ void CublasHandler::axpy(const float* x, float* y, float alpha, size_t size) {
 
 // matrix multiplication
 void CublasHandler::matmul(const float* X, const float* Y, float* Z, size_t B,
-                           size_t M, size_t N, size_t K) {
+                           size_t M, size_t K, size_t N) {
   cublasHandle_t handle = getInstance().getHandle();
 
   // Perform matrix multiplication for each batch
@@ -75,8 +75,8 @@ void CublasHandler::matmul(const float* X, const float* Y, float* Z, size_t B,
     const float beta = 0.0f;
 
     // Call cuBLAS gemm function for batch computation
-    checkCublasErrors(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, M, N, K,
-                                  &alpha, X + b * M * K, M, Y + b * K * N, K,
-                                  &beta, Z + b * M * N, M));
+    checkCublasErrors(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, M, K,
+                                  &alpha, Y + b * N * K, N, X + b * M * K, K,
+                                  &beta, Z + b * M * N, N));
   }
 }
