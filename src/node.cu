@@ -508,7 +508,7 @@ void CosBackward::apply() {
         x_grad[i] -= output_grad[i] * std::sin(x->data()[i]);
       }
     } else if (device == Device::GPU) {
-      std::runtime_error("Not implemented for GPU");
+      GPUHandler::cosBackward(output_grad, x->data(), x_grad, x_grad_tensor->size());
     }
   }
 }
