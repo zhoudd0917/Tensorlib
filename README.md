@@ -82,9 +82,26 @@ These operations shrink the tensor along the given axis.
 
 The project is structured similar to how PyTorch autograd works as described in the [PyTorch documentation](https://pytorch.org/blog/computational-graphs-constructed-in-pytorch/).
 
-While constructing the computational graph, the user can specify the gradient of the output tensor with respect to the input tensor.
+While constructing the computational graph, the user can specify the gradient of the output tensor with respect to the input tensor. For tensors that are not results of operations, they are the leaf nodes of the computational graph. (The figures below are taken from the PyTorch documentation.)
 
-The computational graph is then used to compute the gradient of the output tensor with respect to the input tensor using backpropagation.
+![Computational Graph with leaf nodes](fig/comp_graph_0.png)
+
+As the user does operations on the tensors, the computational graph is constructed. The new grad_fn, which represents the gradient function, is connected to the input tensors.
+
+![Computational Graph with grad_fn](fig/comp_graph_1.png)
+
+When the user calls the `backward` function, the gradient of the output tensor with respect to the input tensor is computed using backpropagation. The gradients are then stored in the input gradients of the tensors. If the tensor for which the user called `backward` on is not a scalar, the user can manually specify the gradient of the output tensor with respect to the input tensor.
+
+For example, we can specify the gradient of the output tensor with respect to the input tensor as follows:
+
+```python
+grad_output = tensorlib.ones(output.shape)
+output.backward(grad_output)
+```
+
+similar to how it is done in PyTorch.
+
+The computational graph is then used to compute the gradient of the output tensor with respect to the input tensor using backpropagation and the chain rule.
 
 ## Project Structure
 
