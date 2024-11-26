@@ -295,7 +295,8 @@ void MatmulBackward::apply() {
       CPUHandler::matmul(output_grad, y->data(), x_grad, B, M, N, K, false,
                          true);
     } else if (device == Device::GPU) {
-      std::runtime_error("Not implemented for GPU");
+      CublasHandler::matmul(output_grad, y->data(), x_grad, B, M, N, K, false,
+                            true);
     }
   }
 
@@ -309,7 +310,8 @@ void MatmulBackward::apply() {
       CPUHandler::matmul(x->data(), output_grad, y_grad, B, K, M, N, true,
                          false);
     } else if (device == Device::GPU) {
-      std::runtime_error("Not implemented for GPU");
+      CublasHandler::matmul(x->data(), output_grad, y_grad, B, K, M, N, true,
+                            false);
     }
   }
 }

@@ -34,7 +34,8 @@ class CublasHandler {
   static void divide(const float* x, const float* y, float* z, size_t size);
   static void axpy(const float* x, float* y, float alpha, size_t size);
   static void matmul(const float* X, const float* Y, float* Z, size_t B,
-                     size_t M, size_t K, size_t N);
+                     size_t M, size_t K, size_t N, bool transX = false,
+                     bool transY = false);
 
   cublasHandle_t getHandle() { return handle; }
 
