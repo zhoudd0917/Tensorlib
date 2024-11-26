@@ -499,7 +499,7 @@ variable reshape(variable x, std::vector<size_t> shape) {
       z->data()[z_index] = x->data()[x_index];
     }
   } else if (device == Device::GPU) {
-    throw std::runtime_error("Not implemented for GPU");
+    GPUHandler::reshape(x->data(), z->data(), x->size());
   }
 
   if (x->requires_grad()) {

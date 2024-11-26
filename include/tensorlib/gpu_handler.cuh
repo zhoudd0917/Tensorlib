@@ -46,6 +46,7 @@ class GPUHandler {
   static void sin(const float* input, float* output, size_t size);
   static void cos(const float* input, float* output, size_t size);
   static void relu(const float* input, float* output, size_t size);
+  static void reshape(const float* input, float* output, size_t size);
 
   cublasHandle_t getHandle() { return handle; }
 
