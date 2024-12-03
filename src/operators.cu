@@ -194,7 +194,22 @@ variable operator/(float x, variable y) {
   return x_tensor / y;
 }
 
-variable operator-(variable x) { return 0.f - x; }
+variable operator-(variable x) {
+  Device device = x->device();
+  auto z = std::make_shared<Tensor>(x->shape(), device, x->requires_grad());
+
+  if (device == Device::CPU) {
+    CPUHandler::negate(x->data(), z->data(), x->size());
+  } else if (device == Device::GPU) {
+    GPUHandler::negate(x->data(), z->data(), x->size());
+  }
+
+  if (x->requires_grad()) {
+    z->autograd_meta().set_grad_fn(std::make_shared<NegateBackward>(z, x));
+  }
+
+  return z;
+}
 
 variable matmul(variable x, variable y) {
   check_tensor_device(x, y);
@@ -383,6 +398,24 @@ variable relu(variable x) {
   return z;
 }
 
+variable sigmoid(variable x) {
+  Device device = x->device();
+
+  auto z = std::make_shared<Tensor>(x->shape(), device, x->requires_grad());
+
+  if (device == Device::CPU) {
+    CPUHandler::sigmoid(x->data(), z->data(), x->size());
+  } else if (device == Device::GPU) {
+    GPUHandler::sigmoid(x->data(), z->data(), x->size());
+  }
+
+  if (x->requires_grad()) {
+    z->autograd_meta().set_grad_fn(std::make_shared<SigmoidBackward>(z, x));
+  }
+
+  return z;
+}
+
 variable select_idx(variable x, size_t index) {
   Device device = x->device();
 
@@ -453,7 +486,7 @@ variable broadcast_to(variable x, std::vector<size_t> shape) {
   if (device == Device::CPU) {
     CPUHandler::broadcast(x->data(), z->data(), x->shape(), shape);
   } else if (device == Device::GPU) {
-    throw std::runtime_error("Not implemented for GPU");
+    GPUHandler::broadcast(x->data(), z->data(), x->shape(), shape);
   }
 
   if (x->requires_grad()) {
@@ -463,7 +496,7 @@ variable broadcast_to(variable x, std::vector<size_t> shape) {
   return z;
 }
 
-variable sum(variable x, size_t axis) {
+variable sum(variable x, size_t axis, bool keepdims) {
   Device device = x->device();
 
   if (axis >= x->shape().size()) {
@@ -472,7 +505,15 @@ variable sum(variable x, size_t axis) {
 
   // new shape
   std::vector<size_t> shape = x->shape();
-  shape.erase(shape.begin() + axis);
+  if (!keepdims) {
+    shape.erase(shape.begin() + axis);
+  } else {
+    shape[axis] = 1;
+  }
+
+  if (shape.size() == 0) {
+    shape.push_back(1);
+  }
 
   auto z = std::make_shared<Tensor>(shape, device, x->requires_grad());
 
@@ -489,14 +530,35 @@ variable sum(variable x, size_t axis) {
   return z;
 }
 
-variable sum(variable x) {
-  while (x->shape().size() > 1) {
-    x = sum(x, 0);
+variable sum(variable x, bool keepdims) {
+  Device device = x->device();
+
+  std::vector<size_t> shape;
+  if (keepdims) {
+    shape = x->shape();
+    for (auto& s : shape) {
+      s = 1;
+    }
+  } else {
+    shape.push_back(1);
   }
-  return sum(x, 0);
+
+  auto z = std::make_shared<Tensor>(shape, device, x->requires_grad());
+
+  if (device == Device::CPU) {
+    CPUHandler::sum(x->data(), z->data(), x->size());
+  } else if (device == Device::GPU) {
+    GPUHandler::sum(x->data(), z->data(), x->size());
+  }
+
+  if (x->requires_grad()) {
+    z->autograd_meta().set_grad_fn(std::make_shared<SumAllBackward>(z, x));
+  }
+
+  return z;
 }
 
-variable mean(variable x, size_t axis) {
+variable mean(variable x, size_t axis, bool keepdims) {
   Device device = x->device();
 
   if (axis >= x->shape().size()) {
@@ -506,7 +568,12 @@ variable mean(variable x, size_t axis) {
   // new shape
   size_t axis_size = x->shape()[axis];
   std::vector<size_t> shape = x->shape();
-  shape.erase(shape.begin() + axis);
+
+  if (!keepdims) {
+    shape.erase(shape.begin() + axis);
+  } else {
+    shape[axis] = 1;
+  }
 
   if (shape.size() == 0) {
     shape.push_back(1);
@@ -521,21 +588,45 @@ variable mean(variable x, size_t axis) {
   }
 
   if (x->requires_grad()) {
-    z->autograd_meta().set_grad_fn(
-        std::make_shared<SumBackward>(z, x, axis, 1. / axis_size));
+    auto grad_fn = std::make_shared<SumBackward>(z, x, axis, 1.0 / axis_size);
+    grad_fn->set_name("MeanBackward");
+    z->autograd_meta().set_grad_fn(grad_fn);
   }
 
   return z;
 }
 
-variable mean(variable x) {
-  while (x->shape().size() > 1) {
-    x = mean(x, 0);
+variable mean(variable x, bool keepdims) {
+  Device device = x->device();
+
+  std::vector<size_t> shape;
+  if (keepdims) {
+    shape = x->shape();
+    for (auto& s : shape) {
+      s = 1;
+    }
+  } else {
+    shape.push_back(1);
   }
-  return mean(x, 0);
+
+  auto z = std::make_shared<Tensor>(shape, device, x->requires_grad());
+
+  if (device == Device::CPU) {
+    CPUHandler::mean(x->data(), z->data(), x->size());
+  } else if (device == Device::GPU) {
+    GPUHandler::mean(x->data(), z->data(), x->size());
+  }
+
+  if (x->requires_grad()) {
+    auto grad_fn = std::make_shared<SumAllBackward>(z, x, 1.0 / x->size());
+    grad_fn->set_name("MeanAllBackward");
+    z->autograd_meta().set_grad_fn(grad_fn);
+  }
+
+  return z;
 }
 
-variable max(variable x, size_t axis) {
+variable max(variable x, size_t axis, bool keepdims) {
   Device device = x->device();
 
   if (axis >= x->shape().size()) {
@@ -544,7 +635,11 @@ variable max(variable x, size_t axis) {
 
   // new shape
   std::vector<size_t> shape = x->shape();
-  shape.erase(shape.begin() + axis);
+  if (!keepdims) {
+    shape.erase(shape.begin() + axis);
+  } else {
+    shape[axis] = 1;
+  }
 
   auto z = std::make_shared<Tensor>(shape, device, x->requires_grad());
 
@@ -556,21 +651,46 @@ variable max(variable x, size_t axis) {
   }
 
   if (x->requires_grad()) {
-    z->autograd_meta().set_grad_fn(
-        std::make_shared<SelectorBackward>(z, x, axis, idx_list));
+    auto grad_fn = std::make_shared<SelectorBackward>(z, x, axis, idx_list);
+    grad_fn->set_name("MaxBackward");
+    z->autograd_meta().set_grad_fn(grad_fn);
   }
 
   return z;
 }
 
-variable max(variable x) {
-  while (x->shape().size() > 1) {
-    x = max(x, 0);
+variable max(variable x, bool keepdims) {
+  Device device = x->device();
+
+  std::vector<size_t> shape;
+  if (keepdims) {
+    shape = x->shape();
+    for (auto& s : shape) {
+      s = 1;
+    }
+  } else {
+    shape.push_back(1);
   }
-  return max(x, 0);
+
+  auto z = std::make_shared<Tensor>(shape, device, x->requires_grad());
+
+  size_t* index = nullptr;
+  if (device == Device::CPU) {
+    index = CPUHandler::max(x->data(), z->data(), x->size());
+  } else if (device == Device::GPU) {
+    index = GPUHandler::max(x->data(), z->data(), x->size());
+  }
+
+  if (x->requires_grad()) {
+    auto grad_fn = std::make_shared<SelectAllBackward>(z, x, index);
+    grad_fn->set_name("MaxAllBackward");
+    z->autograd_meta().set_grad_fn(grad_fn);
+  }
+
+  return z;
 }
 
-variable min(variable x, size_t axis) {
+variable min(variable x, size_t axis, bool keepdims) {
   Device device = x->device();
 
   if (axis >= x->shape().size()) {
@@ -579,7 +699,11 @@ variable min(variable x, size_t axis) {
 
   // new shape
   std::vector<size_t> shape = x->shape();
-  shape.erase(shape.begin() + axis);
+  if (!keepdims) {
+    shape.erase(shape.begin() + axis);
+  } else {
+    shape[axis] = 1;
+  }
 
   auto z = std::make_shared<Tensor>(shape, device, x->requires_grad());
 
@@ -591,16 +715,140 @@ variable min(variable x, size_t axis) {
   }
 
   if (x->requires_grad()) {
-    z->autograd_meta().set_grad_fn(
-        std::make_shared<SelectorBackward>(z, x, axis, idx_list));
+    auto grad_fn = std::make_shared<SelectorBackward>(z, x, axis, idx_list);
+    grad_fn->set_name("MinBackward");
+    z->autograd_meta().set_grad_fn(grad_fn);
   }
 
   return z;
 }
 
-variable min(variable x) {
-  while (x->shape().size() > 1) {
-    x = min(x, 0);
+variable min(variable x, bool keepdims) {
+  Device device = x->device();
+
+  std::vector<size_t> shape;
+  if (keepdims) {
+    shape = x->shape();
+    for (auto& s : shape) {
+      s = 1;
+    }
+  } else {
+    shape.push_back(1);
   }
-  return min(x, 0);
+
+  auto z = std::make_shared<Tensor>(shape, device, x->requires_grad());
+
+  size_t* index = nullptr;
+  if (device == Device::CPU) {
+    index = CPUHandler::min(x->data(), z->data(), x->size());
+  } else if (device == Device::GPU) {
+    index = GPUHandler::min(x->data(), z->data(), x->size());
+  }
+
+  if (x->requires_grad()) {
+    auto grad_fn = std::make_shared<SelectAllBackward>(z, x, index);
+    grad_fn->set_name("MinAllBackward");
+    z->autograd_meta().set_grad_fn(grad_fn);
+  }
+
+  return z;
+}
+
+variable argmax(variable x, size_t axis, bool keepdims) {
+  Device device = x->device();
+
+  if (axis >= x->shape().size()) {
+    throw std::runtime_error("Axis out of bounds");
+  }
+
+  // new shape
+  std::vector<size_t> shape = x->shape();
+  if (!keepdims) {
+    shape.erase(shape.begin() + axis);
+  } else {
+    shape[axis] = 1;
+  }
+
+  auto z = std::make_shared<Tensor>(shape, device, false);
+
+  if (device == Device::CPU) {
+    CPUHandler::argmax(x->data(), z->data(), x->shape(), axis);
+  } else if (device == Device::GPU) {
+    throw std::runtime_error("Not implemented for GPU");
+  }
+
+  return z;
+}
+
+variable argmin(variable x, size_t axis, bool keepdims) {
+  Device device = x->device();
+
+  if (axis >= x->shape().size()) {
+    throw std::runtime_error("Axis out of bounds");
+  }
+
+  // new shape
+  std::vector<size_t> shape = x->shape();
+  if (!keepdims) {
+    shape.erase(shape.begin() + axis);
+  } else {
+    shape[axis] = 1;
+  }
+
+  auto z = std::make_shared<Tensor>(shape, device, false);
+
+  if (device == Device::CPU) {
+    CPUHandler::argmin(x->data(), z->data(), x->shape(), axis);
+  } else if (device == Device::GPU) {
+    throw std::runtime_error("Not implemented for GPU");
+  }
+
+  return z;
+}
+
+variable softmax(variable x, size_t axis) {
+  Device device = x->device();
+
+  auto z = std::make_shared<Tensor>(x->shape(), device, x->requires_grad());
+
+  if (device == Device::CPU) {
+    CPUHandler::softmax(x->data(), z->data(), x->shape(), axis);
+  } else if (device == Device::GPU) {
+    GPUHandler::softmax(x->data(), z->data(), x->shape(), axis);
+  }
+
+  if (x->requires_grad()) {
+    z->autograd_meta().set_grad_fn(
+        std::make_shared<SoftmaxBackward>(z, x, axis));
+  }
+
+  return z;
+}
+
+variable cross_entropy(variable x, variable y) {
+  check_tensor_device(x, y);
+
+  if (x->shape().size() != 2 || y->shape().size() != 2 ||
+      x->shape()[0] != y->shape()[0] || x->shape()[1] != y->shape()[1]) {
+    throw std::runtime_error("Incompatible shape");
+  }
+
+  Device device = x->device();
+  size_t batch_size = x->shape()[0];
+
+  auto z = std::make_shared<Tensor>(std::vector<size_t>{batch_size}, device,
+                                    x->requires_grad() || y->requires_grad());
+
+  if (device == Device::CPU) {
+    CPUHandler::cross_entropy(x->data(), y->data(), z->data(), x->shape());
+  } else if (device == Device::GPU) {
+    throw std::runtime_error("Not implemented for GPU");
+  }
+
+  if (x->requires_grad() || y->requires_grad()) {
+    z->autograd_meta().set_grad_fn(
+        std::make_shared<CrossEntropyBackward>(z, x, y));
+  }
+
+  return z;
 }

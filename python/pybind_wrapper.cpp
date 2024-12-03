@@ -32,17 +32,14 @@ PYBIND11_MODULE(tensorlib, m) {
            }),
            py::arg("data"), py::arg("device") = Device::CPU,
            py::arg("requires_grad") = false)
-      .def("data",
+      .def("to_numpy",
            [](variable self) {
              if (self->device() == Device::GPU) {
                variable cpu_tensor = self->to_device(Device::CPU);
-               return py::array_t<float>(
-                   cpu_tensor->size(), cpu_tensor->data(),
-                   py::capsule(cpu_tensor->data(), [](void* p) {}));
+               return py::array_t<float>(cpu_tensor->shape(),
+                                         cpu_tensor->data());
              }
-             return py::array_t<float>(
-                 self->size(), self->data(),
-                 py::capsule(self->data(), [](void* p) {}));
+             return py::array_t<float>(self->shape(), self->data());
            })
       .def("item", &Tensor::item)
       .def_property_readonly("shape", &Tensor::shape)
@@ -100,23 +97,58 @@ PYBIND11_MODULE(tensorlib, m) {
   m.def("cos", [](variable x) { return cos(x); }, "Exponential");
   m.def("transpose", &transpose, "Transpose");
   m.def("relu", &relu, "ReLU");
+  m.def("sigmoid", &sigmoid, "Sigmoid");
   m.def("select_idx", &select_idx, "Select index");
   m.def("reshape", &reshape, "Reshape");
   m.def("flatten", &flatten, "Flatten");
   m.def(
-      "sum", [](variable x, size_t idx) { return sum(x, idx); },
-      py::arg("tensor"), py::arg("axis"), "Sum along axis");
-  m.def("sum", [](variable x) { return sum(x); }, "Sum whole tensor");
+      "sum",
+      [](variable x, size_t idx, bool keepdims) {
+        return sum(x, idx, keepdims);
+      },
+      py::arg("tensor"), py::arg("axis"), py::arg("keepdims") = false,
+      "Sum along axis");
   m.def(
-      "mean", [](variable x, size_t idx) { return mean(x, idx); },
-      py::arg("tensor"), py::arg("axis"), "Mean along axis");
-  m.def("mean", [](variable x) { return mean(x); }, "Mean whole tensor");
+      "sum", [](variable x, bool keepdims) { return sum(x, keepdims); },
+      py::arg("tensor"), py::arg("keepdims") = false, "Sum whole tensor");
   m.def(
-      "max", [](variable x, size_t idx) { return max(x, idx); },
-      py::arg("tensor"), py::arg("axis"), "Max along axis");
-  m.def("max", [](variable x) { return max(x); }, "Max whole tensor");
+      "mean",
+      [](variable x, size_t idx, bool keepdims) {
+        return mean(x, idx, keepdims);
+      },
+      py::arg("tensor"), py::arg("axis"), py::arg("keepdims") = false,
+      "Mean along axis");
   m.def(
-      "min", [](variable x, size_t idx) { return min(x, idx); },
-      py::arg("tensor"), py::arg("axis"), "Min along axis");
-  m.def("min", [](variable x) { return min(x); }, "Min whole tensor");
+      "mean", [](variable x, bool keepdims) { return mean(x, keepdims); },
+      py::arg("tensor"), py::arg("keepdims") = false, "Mean whole tensor");
+  m.def(
+      "max",
+      [](variable x, size_t idx, bool keepdims) {
+        return max(x, idx, keepdims);
+      },
+      py::arg("tensor"), py::arg("axis"), py::arg("keepdims") = false,
+      "Max along axis");
+  m.def(
+      "max", [](variable x, bool keepdims) { return max(x, keepdims); },
+      py::arg("tensor"), py::arg("keepdims") = false, "Max whole tensor");
+  m.def(
+      "min",
+      [](variable x, size_t idx, bool keepdims) {
+        return min(x, idx, keepdims);
+      },
+      py::arg("tensor"), py::arg("axis"), py::arg("keepdims") = false,
+      "Min along axis");
+  m.def(
+      "min", [](variable x, bool keepdims) { return min(x, keepdims); },
+      py::arg("tensor"), py::arg("keepdims") = false, "Min whole tensor");
+  m.def(
+      "argmax", [](variable x, size_t axis) { return argmax(x, axis); },
+      py::arg("tensor"), py::arg("axis"), "Argmax along axis");
+  m.def(
+      "argmin", [](variable x, size_t axis) { return argmin(x, axis); },
+      py::arg("tensor"), py::arg("axis"), "Argmin along axis");
+  m.def("softmax", &softmax, py::arg("tensor"), py::arg("axis"),
+        "Softmax along axis");
+  m.def("cross_entropy", &cross_entropy, py::arg("x"), py::arg("y"),
+        "Cross entropy loss");
 }

@@ -18,7 +18,7 @@ size_t calculate_index_after_drop_axis(size_t index, size_t axis,
                                        const std::vector<size_t>& shape);
 
 // given an index in a tensor with dropped axis, return the index in the
-// original tensor
+// original tensor (with shape shape)
 size_t calculate_index_after_add_axis(size_t index, size_t axis,
                                       const std::vector<size_t>& shape);
 

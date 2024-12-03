@@ -23,6 +23,9 @@ class Node : std::enable_shared_from_this<Node> {
 
   edge_list& next_edges() { return next_edges_; }
   const std::string& name() { return name_; }
+  variable_list& inputs() { return inputs_; }
+  std::weak_ptr<Tensor> output() { return output_; }
+  void set_name(const std::string& name) { name_ = name; }
 
  protected:
   // output from the last node, used to access last gradient
@@ -56,6 +59,12 @@ class MulBackward : public Node {
 class DivBackward : public Node {
  public:
   DivBackward(variable output, variable x, variable y);
+  void apply() override;
+};
+
+class NegateBackward : public Node {
+ public:
+  NegateBackward(variable output, variable x);
   void apply() override;
 };
 
@@ -101,6 +110,12 @@ class ReluBackward : public Node {
   void apply() override;
 };
 
+class SigmoidBackward : public Node {
+ public:
+  SigmoidBackward(variable output, variable x);
+  void apply() override;
+};
+
 class SelectBackward : public Node {
  public:
   SelectBackward(variable output, variable x, size_t index);
@@ -132,6 +147,15 @@ class SumBackward : public Node {
   float factor_;
 };
 
+class SumAllBackward : public Node {
+ public:
+  SumAllBackward(variable output, variable x, float factor = 1.0);
+  void apply() override;
+
+ private:
+  float factor_;
+};
+
 // Backward for functions that reduce the dimension of the input into a scalar
 // by selecting a specific index
 // eg. max, min
@@ -146,6 +170,32 @@ class SelectorBackward : public Node {
   size_t axis_;
   size_t* index_list_;
   Device device_;
+};
+
+class SelectAllBackward : public Node {
+ public:
+  SelectAllBackward(variable output, variable x, size_t* index);
+  ~SelectAllBackward();
+  void apply() override;
+
+ private:
+  size_t* index_;
+  Device device_;
+};
+
+class SoftmaxBackward : public Node {
+ public:
+  SoftmaxBackward(variable output, variable x, size_t axis);
+  void apply() override;
+
+ private:
+  size_t axis_;
+};
+
+class CrossEntropyBackward : public Node {
+ public:
+  CrossEntropyBackward(variable output, variable x, variable y);
+  void apply() override;
 };
 
 #endif

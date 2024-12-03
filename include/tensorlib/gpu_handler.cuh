@@ -33,6 +33,7 @@ class GPUHandler {
   static void sub(const float* x, const float* y, float* z, size_t size);
   static void multiply(const float* x, const float* y, float* z, size_t size);
   static void divide(const float* x, const float* y, float* z, size_t size);
+  static void negate(const float* x, float* y, size_t size);
   static void axpy(const float* x, float* y, float alpha, size_t size);
   static void matmul(const float* X, const float* Y, float* Z, size_t B,
                      size_t M, size_t K, size_t N, bool transX = false,
@@ -45,22 +46,70 @@ class GPUHandler {
   static void logBackward(const float* output_grad, const float* x_data,
                           float* x_grad, size_t size);
   static void exp(const float* input, float* output, size_t size);
+  static void expMul(const float* output_data, float* x_grad,
+                     const float* output_grad, size_t size);
   static void sin(const float* input, float* output, size_t size);
   static void cos(const float* input, float* output, size_t size);
+  // sin backward, x_grad[i] += output_grad[i] * cos(x_data[i])
+  static void sinBackward(const float* output_grad, const float* x_data,
+                          float* x_grad, size_t size);
+  // cos backward, x_grad[i] += -output_grad[i] * sin(x_data[i])
+  static void cosBackward(const float* output_grad, const float* x_data,
+                          float* x_grad, size_t size);
   static void relu(const float* input, float* output, size_t size);
+  // relu backward, x_grad[i] += output_grad[i] * (x_data[i] > 0 ? 1 : 0)
+  static void reluBackward(const float* output_grad, const float* x_data,
+                           float* x_grad, size_t size);
+  // sigmoid
+  static void sigmoid(const float* input, float* output, size_t size);
+  // sigmoid backward, x_grad[i] += output_grad[i] * output[i] * (1 - output[i])
+  static void sigmoidBackward(const float* output_grad, const float* output,
+                              float* x_grad, size_t size);
   static void sum(float* input, float* output, std::vector<size_t> shape,
                   size_t axis);
+  // sum all elements
+  static void sum(float* input, float* output, size_t size);
+  static void mean(float* input, float* output, std::vector<size_t> shape,
+                   size_t axis);
+  // mean all elements
+  static void mean(float* input, float* output, size_t size);
   static void add_axis(float* x_grad, const float* output_grad,
                        std::vector<size_t> x_shape,
                        std::vector<size_t> x_stride, size_t axis,
                        size_t axis_size, float factor);
+  static void set_all(float* x, const float* val, float factor, size_t size);
   static void reshape(const float* input, float* output, size_t size);
-  static void expBackward(const float* output_grad, const float* x_data, float* x_grad, size_t size);
-  static void sinBackward(const float* output_grad, const float* x_data, float* x_grad, size_t size);
-  static void cosBackward(const float* output_grad, const float* x_data, float* x_grad, size_t size);
-  static void mean(const float* input, float* output, const std::vector<size_t>& shape, size_t axis);
-  static size_t* max(const float* input, float* output, const std::vector<size_t>& shape, size_t axis);
-  static size_t* min(const float* input, float* output, const std::vector<size_t>& shape, size_t axis);          
+  static void broadcast(const float* input, float* output,
+                        const std::vector<size_t>& input_shape,
+                        const std::vector<size_t>& output_shape);
+  static void broadcastBackward(const float* output_grad, float* x_grad,
+                                const std::vector<size_t>& x_shape,
+                                const std::vector<size_t>& z_stride,
+                                const std::vector<size_t>& x_stride,
+                                size_t z_size);
+  // finds the maximum value along the specified axis, and stores the index of
+  // the maximum value in index_list return
+  static size_t* max(const float* input, float* output,
+                     std::vector<size_t> shape, size_t axis);
+  // find the maximum value in the tensor
+  static size_t* max(const float* input, float* output, size_t size);
+  // find the minimum value along the specified axis
+  static size_t* min(const float* input, float* output,
+                     std::vector<size_t> shape, size_t axis);
+  // find the minimum value in the tensor
+  static size_t* min(const float* input, float* output, size_t size);
+  // softmax along the specified axis
+  static void softmax(const float* input, float* output,
+                      std::vector<size_t> shape, size_t axis);
+  // softmax backward
+  static void softmax_backward(float* x_grad, const float* output_grad,
+                               const float* z_data, size_t axis_size,
+                               size_t size_squashed, size_t axis_stride);
+
+  // update the gradient of the input tensor with the gradient of the output
+  // x_grad[index_list[i]] += output_grad[i]
+  static void update_grad_selector(size_t* index_list, float* x_grad,
+                                   float* output_grad, size_t size);
 
   cublasHandle_t getHandle() { return handle; }
 

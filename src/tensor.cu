@@ -210,7 +210,7 @@ std::string Tensor::to_string() const {
   // std::string result = "Tensor([\n";
   std::stringstream result;
 
-  result << std::fixed << std::setprecision(2) << "Tensor(";
+  result << std::fixed << std::setprecision(4) << "Tensor(";
 
   // Allocate temporary CPU array if data is on GPU
   float* temp = nullptr;
