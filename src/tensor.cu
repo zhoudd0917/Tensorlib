@@ -2,6 +2,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <tensorlib/autograd.hpp>
+#include <tensorlib/grad_mode.hpp>
 #include <tensorlib/node.cuh>
 #include <tensorlib/tensor.cuh>
 #include <tensorlib/utils.hpp>
@@ -132,9 +133,8 @@ void Tensor::set_grad(std::shared_ptr<Tensor> grad) {
   check_tensor_shape(grad, autograd_meta_->grad_);
 
   if (grad->device() != autograd_meta_->grad_->device()) {
-    grad->to_device(autograd_meta_->grad_->device());
+    grad = grad->to_device(autograd_meta_->grad_->device());
   }
-
   size_t size = grad->size();
 
   // Copy gradient data
@@ -148,8 +148,17 @@ void Tensor::set_grad(std::shared_ptr<Tensor> grad) {
 
 // Perform backpropagation
 void Tensor::backward(std::shared_ptr<Tensor> grad) {
+  if (!requires_grad()) {
+    throw std::runtime_error("Backward called on non-requires-grad tensor");
+  }
+  if (!GradMode::is_enabled()) {
+    throw std::runtime_error("Backward called outside of grad mode");
+  }
   // Copy gradient data
   set_grad(grad);
+
+  // no backward pass for leaf tensor
+  if (!autograd_meta().grad_fn_) return;
 
   node_list sorted_nodes = topological_sort(autograd_meta().grad_fn_);
   for (auto& node : sorted_nodes) {

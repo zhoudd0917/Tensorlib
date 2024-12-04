@@ -11,7 +11,7 @@ set(PYTHON_MODULE_NAME tensorlib)
 set(CPP_LIBRARY_NAME tensorlib_cpp)
 
 set(CUDA_SOURCES src/tensor.cu src/gpu_handler.cu src/node.cu src/operators.cu)
-set(CPP_SOURCES src/autograd.cpp src/cpu_handler.cpp src/utils.cpp src/tensor_factory.cpp)
+set(CPP_SOURCES src/autograd.cpp src/cpu_handler.cpp src/utils.cpp src/tensor_factory.cpp src/grad_mode.cpp)
 
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 find_package(pybind11 REQUIRED)

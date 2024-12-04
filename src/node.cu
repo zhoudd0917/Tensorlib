@@ -694,7 +694,10 @@ void ReshapeBackward::apply() {
         x_grad[i] += output_grad[i];
       }
     } else if (device == Device::GPU) {
-      std::runtime_error("Not implemented for GPU");
+      // copy memory
+      checkCudaErrors(cudaMemcpy(x_grad, output_grad,
+                                 x_grad_tensor->size() * sizeof(float),
+                                 cudaMemcpyDeviceToDevice));
     }
   }
 }
@@ -994,8 +997,7 @@ void CrossEntropyBackward::apply() {
     CPUHandler::softmax(x->data(), t_softmax, x->shape(), 1);
   } else if (device == Device::GPU) {
     cudaMalloc(&t_softmax, batch_size * num_classes * sizeof(float));
-    throw std::runtime_error("Not implemented for GPU");
-    // GPUHandler::softmax(x->data(), t_softmax, x->shape(), 1);
+    GPUHandler::softmax(x->data(), t_softmax, x->shape(), 1);
   }
 
   if (x->requires_grad()) {
@@ -1017,7 +1019,8 @@ void CrossEntropyBackward::apply() {
         }
       }
     } else if (device == Device::GPU) {
-      std::runtime_error("Not implemented for GPU");
+      GPUHandler::cross_entropy_backward_x(
+          t_softmax, y->data(), x_grad, output_grad, batch_size, num_classes);
     }
   }
 
@@ -1027,16 +1030,13 @@ void CrossEntropyBackward::apply() {
     if (device == Device::CPU) {
       for (size_t b = 0; b < batch_size; b++) {
         for (size_t i = 0; i < num_classes; i++) {
-          float y_sum = 0.;
-          for (size_t j = 0; j < num_classes; j++) {
-            y_sum += y->data()[b * num_classes + j];
-          }
           y_grad[b * num_classes + i] +=
               output_grad[b] * (-std::log(t_softmax[b * num_classes + i]));
         }
       }
     } else if (device == Device::GPU) {
-      std::runtime_error("Not implemented for GPU");
+      GPUHandler::cross_entropy_backward_y(t_softmax, y_grad, output_grad,
+                                           batch_size, num_classes);
     }
   }
 

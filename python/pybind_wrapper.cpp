@@ -17,7 +17,7 @@ PYBIND11_MODULE(tensorlib, m) {
       .def(py::init([](py::array_t<float> arr, Device device,
                        bool requires_grad) {
              auto buf = arr.request();
-             float* ptr = static_cast<float*>(buf.ptr);
+             float *ptr = static_cast<float *>(buf.ptr);
              std::vector<float> data(ptr, ptr + buf.size);
              std::vector<size_t> shape(buf.ndim);
              for (size_t i = 0; i < buf.ndim; i++) {
@@ -151,4 +151,10 @@ PYBIND11_MODULE(tensorlib, m) {
         "Softmax along axis");
   m.def("cross_entropy", &cross_entropy, py::arg("x"), py::arg("y"),
         "Cross entropy loss");
+  py::class_<NoGradScope>(m, "no_grad")
+      .def(py::init<>())
+      .def("__enter__",
+           [](NoGradScope &self) { return &self; })  // Enter context
+      .def("__exit__", [](NoGradScope &self, py::object, py::object,
+                          py::object) {});  // Exit context
 }

@@ -71,16 +71,11 @@ for epoch in range(epochs):
     loss.backward()
 
     # Gradient descent
-    W1 -= learning_rate * W1.grad
-    b1 -= learning_rate * b1.grad
-    W2 -= learning_rate * W2.grad
-    b2 -= learning_rate * b2.grad
-
-    # Clear gradients
-    W1.grad.zero_()
-    b1.grad.zero_()
-    W2.grad.zero_()
-    b2.grad.zero_()
+    with tl.no_grad():
+        W1 -= learning_rate * W1.grad
+        b1 -= learning_rate * b1.grad
+        W2 -= learning_rate * W2.grad
+        b2 -= learning_rate * b2.grad
 
     train_loss.append(loss.item())
 

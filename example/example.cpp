@@ -16,8 +16,12 @@ int main() {
                             vector<size_t>{2, 3, 1}, device, true);
 
   variable z = matmul(x, y);
-  variable w = log(z);
-  variable l = sum(w, 1);
+  variable w, l;
+  {
+    NoGradScope scope;
+    w = log(z);
+    l = sum(w, 1, false);
+  }
 
   cout << "x: " << x->to_string() << endl;
   cout << "y: " << y->to_string() << endl;

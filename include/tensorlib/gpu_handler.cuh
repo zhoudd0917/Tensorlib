@@ -105,6 +105,21 @@ class GPUHandler {
   static void softmax_backward(float* x_grad, const float* output_grad,
                                const float* z_data, size_t axis_size,
                                size_t size_squashed, size_t axis_stride);
+  // cross entropy loss
+  static void cross_entropy(const float* x, const float* y, float* z,
+                            std::vector<size_t> shape);
+  // cross entropy loss backward for x
+  static void cross_entropy_backward_x(const float* t_softmax, const float* y,
+                                       float* x_grad, const float* output_grad,
+                                       size_t batch_size, size_t num_classes);
+  // cross entropy loss backward for y
+  static void cross_entropy_backward_y(const float* t_softmax, float* y_grad,
+                                       const float* output_grad,
+                                       size_t batch_size, size_t num_classes);
+  static void argmax(const float* input, float* output,
+                     std::vector<size_t> shape, size_t axis);
+  static void argmin(const float* input, float* output,
+                     std::vector<size_t> shape, size_t axis);
 
   // update the gradient of the input tensor with the gradient of the output
   // x_grad[index_list[i]] += output_grad[i]

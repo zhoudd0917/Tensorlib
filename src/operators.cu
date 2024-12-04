@@ -1,6 +1,7 @@
 #include <tensorlib/autograd.hpp>
 #include <tensorlib/cpu_handler.hpp>
 #include <tensorlib/gpu_handler.cuh>
+#include <tensorlib/grad_mode.hpp>
 #include <tensorlib/node.cuh>
 #include <tensorlib/operators.cuh>
 #include <tensorlib/tensor.cuh>
@@ -68,7 +69,7 @@ variable operator+(variable x, variable y) {
     GPUHandler::add(x->data(), y->data(), z->data(), x->size());
   }
 
-  if (require_grad) {
+  if (require_grad && GradMode::is_enabled()) {
     z->autograd_meta().set_grad_fn(std::make_shared<AddBackward>(z, x, y));
   }
 
@@ -101,7 +102,7 @@ variable operator-(variable x, variable y) {
     GPUHandler::sub(x->data(), y->data(), z->data(), x->size());
   }
 
-  if (require_grad) {
+  if (require_grad && GradMode::is_enabled()) {
     z->autograd_meta().set_grad_fn(std::make_shared<SubBackward>(z, x, y));
   }
 
@@ -139,7 +140,7 @@ variable operator*(variable x, variable y) {
     GPUHandler::multiply(x->data(), y->data(), z->data(), x->size());
   }
 
-  if (require_grad) {
+  if (require_grad && GradMode::is_enabled()) {
     z->autograd_meta().set_grad_fn(std::make_shared<MulBackward>(z, x, y));
   }
 
@@ -171,7 +172,7 @@ variable operator/(variable x, variable y) {
     GPUHandler::divide(x->data(), y->data(), z->data(), x->size());
   }
 
-  if (require_grad) {
+  if (require_grad && GradMode::is_enabled()) {
     z->autograd_meta().set_grad_fn(std::make_shared<DivBackward>(z, x, y));
   }
 
@@ -204,7 +205,7 @@ variable operator-(variable x) {
     GPUHandler::negate(x->data(), z->data(), x->size());
   }
 
-  if (x->requires_grad()) {
+  if (x->requires_grad() && GradMode::is_enabled()) {
     z->autograd_meta().set_grad_fn(std::make_shared<NegateBackward>(z, x));
   }
 
@@ -260,7 +261,7 @@ variable matmul(variable x, variable y) {
     GPUHandler::matmul(x->data(), y->data(), z->data(), B, M, K, N);
   }
 
-  if (require_grad) {
+  if (require_grad && GradMode::is_enabled()) {
     z->autograd_meta().set_grad_fn(std::make_shared<MatmulBackward>(z, x, y));
   }
 
@@ -301,7 +302,7 @@ variable transpose(variable x) {
     GPUHandler::transpose(x->data(), z->data(), B, M, N);
   }
 
-  if (x->requires_grad()) {
+  if (x->requires_grad() && GradMode::is_enabled()) {
     z->autograd_meta().set_grad_fn(std::make_shared<TransposeBackward>(z, x));
   }
 
@@ -319,7 +320,7 @@ variable log(variable x) {
     GPUHandler::log(x->data(), z->data(), x->size());
   }
 
-  if (x->requires_grad()) {
+  if (x->requires_grad() && GradMode::is_enabled()) {
     z->autograd_meta().set_grad_fn(std::make_shared<LogBackward>(z, x));
   }
 
@@ -337,7 +338,7 @@ variable exp(variable x) {
     GPUHandler::exp(x->data(), z->data(), x->size());
   }
 
-  if (x->requires_grad()) {
+  if (x->requires_grad() && GradMode::is_enabled()) {
     z->autograd_meta().set_grad_fn(std::make_shared<ExpBackward>(z, x));
   }
 
@@ -355,7 +356,7 @@ variable sin(variable x) {
     GPUHandler::sin(x->data(), z->data(), x->size());
   }
 
-  if (x->requires_grad()) {
+  if (x->requires_grad() && GradMode::is_enabled()) {
     z->autograd_meta().set_grad_fn(std::make_shared<SinBackward>(z, x));
   }
 
@@ -373,7 +374,7 @@ variable cos(variable x) {
     GPUHandler::cos(x->data(), z->data(), x->size());
   }
 
-  if (x->requires_grad()) {
+  if (x->requires_grad() && GradMode::is_enabled()) {
     z->autograd_meta().set_grad_fn(std::make_shared<CosBackward>(z, x));
   }
 
@@ -391,7 +392,7 @@ variable relu(variable x) {
     GPUHandler::relu(x->data(), z->data(), x->size());
   }
 
-  if (x->requires_grad()) {
+  if (x->requires_grad() && GradMode::is_enabled()) {
     z->autograd_meta().set_grad_fn(std::make_shared<ReluBackward>(z, x));
   }
 
@@ -409,7 +410,7 @@ variable sigmoid(variable x) {
     GPUHandler::sigmoid(x->data(), z->data(), x->size());
   }
 
-  if (x->requires_grad()) {
+  if (x->requires_grad() && GradMode::is_enabled()) {
     z->autograd_meta().set_grad_fn(std::make_shared<SigmoidBackward>(z, x));
   }
 
@@ -438,7 +439,7 @@ variable select_idx(variable x, size_t index) {
     GPUHandler::select_idx(x->data(), z->data(), x->shape(), index);
   }
 
-  if (x->requires_grad()) {
+  if (x->requires_grad() && GradMode::is_enabled()) {
     z->autograd_meta().set_grad_fn(
         std::make_shared<SelectBackward>(z, x, index));
   }
@@ -468,7 +469,7 @@ variable reshape(variable x, std::vector<size_t> shape) {
     GPUHandler::reshape(x->data(), z->data(), x->size());
   }
 
-  if (x->requires_grad()) {
+  if (x->requires_grad() && GradMode::is_enabled()) {
     z->autograd_meta().set_grad_fn(std::make_shared<ReshapeBackward>(z, x));
   }
 
@@ -489,7 +490,7 @@ variable broadcast_to(variable x, std::vector<size_t> shape) {
     GPUHandler::broadcast(x->data(), z->data(), x->shape(), shape);
   }
 
-  if (x->requires_grad()) {
+  if (x->requires_grad() && GradMode::is_enabled()) {
     z->autograd_meta().set_grad_fn(std::make_shared<BroadcastBackward>(z, x));
   }
 
@@ -523,7 +524,7 @@ variable sum(variable x, size_t axis, bool keepdims) {
     GPUHandler::sum(x->data(), z->data(), x->shape(), axis);
   }
 
-  if (x->requires_grad()) {
+  if (x->requires_grad() && GradMode::is_enabled()) {
     z->autograd_meta().set_grad_fn(std::make_shared<SumBackward>(z, x, axis));
   }
 
@@ -551,7 +552,7 @@ variable sum(variable x, bool keepdims) {
     GPUHandler::sum(x->data(), z->data(), x->size());
   }
 
-  if (x->requires_grad()) {
+  if (x->requires_grad() && GradMode::is_enabled()) {
     z->autograd_meta().set_grad_fn(std::make_shared<SumAllBackward>(z, x));
   }
 
@@ -587,7 +588,7 @@ variable mean(variable x, size_t axis, bool keepdims) {
     GPUHandler::mean(x->data(), z->data(), x->shape(), axis);
   }
 
-  if (x->requires_grad()) {
+  if (x->requires_grad() && GradMode::is_enabled()) {
     auto grad_fn = std::make_shared<SumBackward>(z, x, axis, 1.0 / axis_size);
     grad_fn->set_name("MeanBackward");
     z->autograd_meta().set_grad_fn(grad_fn);
@@ -617,7 +618,7 @@ variable mean(variable x, bool keepdims) {
     GPUHandler::mean(x->data(), z->data(), x->size());
   }
 
-  if (x->requires_grad()) {
+  if (x->requires_grad() && GradMode::is_enabled()) {
     auto grad_fn = std::make_shared<SumAllBackward>(z, x, 1.0 / x->size());
     grad_fn->set_name("MeanAllBackward");
     z->autograd_meta().set_grad_fn(grad_fn);
@@ -650,7 +651,7 @@ variable max(variable x, size_t axis, bool keepdims) {
     idx_list = GPUHandler::max(x->data(), z->data(), x->shape(), axis);
   }
 
-  if (x->requires_grad()) {
+  if (x->requires_grad() && GradMode::is_enabled()) {
     auto grad_fn = std::make_shared<SelectorBackward>(z, x, axis, idx_list);
     grad_fn->set_name("MaxBackward");
     z->autograd_meta().set_grad_fn(grad_fn);
@@ -681,7 +682,7 @@ variable max(variable x, bool keepdims) {
     index = GPUHandler::max(x->data(), z->data(), x->size());
   }
 
-  if (x->requires_grad()) {
+  if (x->requires_grad() && GradMode::is_enabled()) {
     auto grad_fn = std::make_shared<SelectAllBackward>(z, x, index);
     grad_fn->set_name("MaxAllBackward");
     z->autograd_meta().set_grad_fn(grad_fn);
@@ -714,7 +715,7 @@ variable min(variable x, size_t axis, bool keepdims) {
     idx_list = GPUHandler::min(x->data(), z->data(), x->shape(), axis);
   }
 
-  if (x->requires_grad()) {
+  if (x->requires_grad() && GradMode::is_enabled()) {
     auto grad_fn = std::make_shared<SelectorBackward>(z, x, axis, idx_list);
     grad_fn->set_name("MinBackward");
     z->autograd_meta().set_grad_fn(grad_fn);
@@ -745,7 +746,7 @@ variable min(variable x, bool keepdims) {
     index = GPUHandler::min(x->data(), z->data(), x->size());
   }
 
-  if (x->requires_grad()) {
+  if (x->requires_grad() && GradMode::is_enabled()) {
     auto grad_fn = std::make_shared<SelectAllBackward>(z, x, index);
     grad_fn->set_name("MinAllBackward");
     z->autograd_meta().set_grad_fn(grad_fn);
@@ -774,7 +775,7 @@ variable argmax(variable x, size_t axis, bool keepdims) {
   if (device == Device::CPU) {
     CPUHandler::argmax(x->data(), z->data(), x->shape(), axis);
   } else if (device == Device::GPU) {
-    throw std::runtime_error("Not implemented for GPU");
+    GPUHandler::argmax(x->data(), z->data(), x->shape(), axis);
   }
 
   return z;
@@ -800,7 +801,7 @@ variable argmin(variable x, size_t axis, bool keepdims) {
   if (device == Device::CPU) {
     CPUHandler::argmin(x->data(), z->data(), x->shape(), axis);
   } else if (device == Device::GPU) {
-    throw std::runtime_error("Not implemented for GPU");
+    GPUHandler::argmin(x->data(), z->data(), x->shape(), axis);
   }
 
   return z;
@@ -817,7 +818,7 @@ variable softmax(variable x, size_t axis) {
     GPUHandler::softmax(x->data(), z->data(), x->shape(), axis);
   }
 
-  if (x->requires_grad()) {
+  if (x->requires_grad() && GradMode::is_enabled()) {
     z->autograd_meta().set_grad_fn(
         std::make_shared<SoftmaxBackward>(z, x, axis));
   }
@@ -842,10 +843,12 @@ variable cross_entropy(variable x, variable y) {
   if (device == Device::CPU) {
     CPUHandler::cross_entropy(x->data(), y->data(), z->data(), x->shape());
   } else if (device == Device::GPU) {
-    throw std::runtime_error("Not implemented for GPU");
+    GPUHandler::cross_entropy(x->data(), y->data(), z->data(), x->shape());
   }
 
-  if (x->requires_grad() || y->requires_grad()) {
+  bool require_grad = x->requires_grad() || y->requires_grad();
+
+  if (require_grad && GradMode::is_enabled()) {
     z->autograd_meta().set_grad_fn(
         std::make_shared<CrossEntropyBackward>(z, x, y));
   }

@@ -2,7 +2,6 @@
 #include <omp.h>
 
 #include <cmath>
-#include <iostream>
 #include <tensorlib/cpu_handler.hpp>
 #include <tensorlib/utils.hpp>
 
