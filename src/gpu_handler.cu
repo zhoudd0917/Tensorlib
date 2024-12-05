@@ -50,9 +50,6 @@ void GPUHandler::divide(const float* x, const float* y, float* z, size_t size) {
 
   // Launch the CUDA kernel to perform element-wise division
   elementWiseDivision<<<gridSize, blockSize>>>(x, y, z, size);
-
-  // Check for CUDA errors
-  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 void GPUHandler::negate(const float* x, float* y, size_t size) {
@@ -115,8 +112,6 @@ void GPUHandler::log(const float* input, float* output, size_t size) {
   int gridSize = (size + blockSize - 1) / blockSize;
 
   elementWiseLog<<<gridSize, blockSize>>>(input, output, size);
-
-  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 __global__ void selectIdx(float* X, float* Z, size_t size, size_t idx) {
@@ -133,8 +128,6 @@ void GPUHandler::select_idx(float* X, float* Z, std::vector<size_t> x_shape,
   int blockSize = 256;
   int gridSize = (size + blockSize - 1) / blockSize;
   selectIdx<<<gridSize, blockSize>>>(X, Z, size, idx);
-
-  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 __global__ void sum_along_axis(const float* X, float* Z, size_t input_size,
@@ -161,7 +154,6 @@ void GPUHandler::sum(float* X, float* Z, std::vector<size_t> x_shape,
 
   sum_along_axis<<<blocks, threads>>>(X, Z, input_size, output_size,
                                       axis_stride, axis_size);
-  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 __global__ void sumAll(const float* X, float* Z, size_t size,
@@ -177,8 +169,6 @@ void GPUHandler::sum(float* X, float* Z, size_t size) {
   int gridSize = (size + blockSize - 1) / blockSize;
 
   sumAll<<<gridSize, blockSize>>>(X, Z, size);
-
-  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 __global__ void add_axis_kernel(const float* output_grad, float* x_grad,
@@ -207,8 +197,6 @@ void GPUHandler::mean(float* X, float* Z, std::vector<size_t> x_shape,
 
   sum_along_axis<<<blocks, threads>>>(X, Z, input_size, output_size,
                                       axis_stride, axis_size, 1.0 / axis_size);
-
-  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 void GPUHandler::mean(float* X, float* Z, size_t size) {
@@ -216,8 +204,6 @@ void GPUHandler::mean(float* X, float* Z, size_t size) {
   int gridSize = (size + blockSize - 1) / blockSize;
 
   sumAll<<<gridSize, blockSize>>>(X, Z, size, 1.0 / size);
-
-  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 void GPUHandler::add_axis(float* x_grad, const float* output_grad,
@@ -249,8 +235,6 @@ void GPUHandler::set_all(float* x, const float* val, float factor,
   int gridSize = (size + blockSize - 1) / blockSize;
 
   set_all_kernel<<<gridSize, blockSize>>>(x, val, factor, size);
-
-  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 // exp
@@ -266,8 +250,6 @@ void GPUHandler::exp(const float* input, float* output, size_t size) {
   int gridSize = (size + blockSize - 1) / blockSize;
 
   elementWiseExp<<<gridSize, blockSize>>>(input, output, size);
-
-  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 // expMul
@@ -287,8 +269,6 @@ void GPUHandler::expMul(const float* output_data, float* x_grad,
   int blockSize = 256;
   int gridSize = (size + blockSize - 1) / blockSize;
   expMulKernel<<<gridSize, blockSize>>>(output_data, x_grad, output_grad, size);
-
-  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 // sin
@@ -304,8 +284,6 @@ void GPUHandler::sin(const float* input, float* output, size_t size) {
   int gridSize = (size + blockSize - 1) / blockSize;
 
   elementWiseSin<<<gridSize, blockSize>>>(input, output, size);
-
-  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 // sin backward
@@ -323,8 +301,6 @@ void GPUHandler::sinBackward(const float* output_grad, const float* x_data,
   int gridSize = (size + blockSize - 1) / blockSize;
 
   sinBackwardKernel<<<gridSize, blockSize>>>(output_grad, x_data, x_grad, size);
-
-  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 // cos
@@ -340,8 +316,6 @@ void GPUHandler::cos(const float* input, float* output, size_t size) {
   int gridSize = (size + blockSize - 1) / blockSize;
 
   elementWiseCos<<<gridSize, blockSize>>>(input, output, size);
-
-  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 __global__ void cosBackwardKernel(const float* output_grad, const float* x_data,
@@ -358,8 +332,6 @@ void GPUHandler::cosBackward(const float* output_grad, const float* x_data,
   int gridSize = (size + blockSize - 1) / blockSize;
 
   cosBackwardKernel<<<gridSize, blockSize>>>(output_grad, x_data, x_grad, size);
-
-  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 // relu
@@ -376,8 +348,6 @@ void GPUHandler::relu(const float* input, float* output, size_t size) {
   int gridSize = (size + blockSize - 1) / blockSize;
 
   elementWiseReLU<<<gridSize, blockSize>>>(input, output, size);
-
-  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 // relu backward
@@ -397,8 +367,6 @@ void GPUHandler::reluBackward(const float* output_grad, const float* x_data,
 
   reluBackwardKernel<<<gridSize, blockSize>>>(output_grad, x_data, x_grad,
                                               size);
-
-  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 // sigmoid
@@ -415,8 +383,6 @@ void GPUHandler::sigmoid(const float* input, float* output, size_t size) {
   int gridSize = (size + blockSize - 1) / blockSize;
 
   elementWiseSigmoid<<<gridSize, blockSize>>>(input, output, size);
-
-  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 // sigmoid backward
@@ -436,16 +402,11 @@ void GPUHandler::sigmoidBackward(const float* output_grad, const float* output,
 
   sigmoidBackwardKernel<<<gridSize, blockSize>>>(output_grad, output, x_grad,
                                                  size);
-
-  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 void GPUHandler::reshape(const float* input, float* output, size_t size) {
   checkCudaErrors(cudaMemcpy(output, input, size * sizeof(float),
                              cudaMemcpyDeviceToDevice));
-
-  // Synchronize to ensure the operation is complete
-  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 __global__ void logBackwardKernel(const float* output_grad, const float* x_data,
@@ -462,8 +423,6 @@ void GPUHandler::logBackward(const float* output_grad, const float* x_data,
   int gridSize = (size + blockSize - 1) / blockSize;
 
   logBackwardKernel<<<gridSize, blockSize>>>(output_grad, x_data, x_grad, size);
-
-  checkCudaErrors(cudaDeviceSynchronize());
 }
 
 __global__ void broadcast_kernel(const float* X, float* Z,
@@ -519,8 +478,6 @@ void GPUHandler::broadcast(const float* X, float* Z,
                                               d_x_strides, d_z_strides,
                                               total_elements, x_dims, z_dims);
 
-  cudaDeviceSynchronize();
-
   deallocate(d_x_shape);
   deallocate(d_z_shape);
   deallocate(d_x_strides);
@@ -574,8 +531,6 @@ void GPUHandler::broadcastBackward(const float* output_grad, float* x_grad,
 
   broadcastBackwardKernel<<<grid_size, block_size>>>(
       output_grad, x_grad, d_x_shape, d_z_stride, d_x_stride, z_size, ndim);
-
-  cudaDeviceSynchronize();
 
   deallocate(d_x_shape);
   deallocate(d_z_stride);
@@ -717,8 +672,6 @@ void GPUHandler::update_grad_selector(size_t* index_list, float* x_grad,
 
   update_grad_kernel<<<grid_size, block_size>>>(index_list, x_grad, output_grad,
                                                 size);
-
-  cudaDeviceSynchronize();
 }
 
 __global__ void softmax_kernel(const float* X, float* Z, size_t axis_size,
@@ -761,8 +714,6 @@ void GPUHandler::softmax(const float* X, float* Z, std::vector<size_t> x_shape,
 
   softmax_kernel<<<grid_size, block_size>>>(X, Z, axis_size, strides[axis],
                                             size_squashed);
-
-  cudaDeviceSynchronize();
 }
 
 __global__ void softmax_backward_kernel(float* x_grad, const float* output_grad,
@@ -797,8 +748,6 @@ void GPUHandler::softmax_backward(float* x_grad, const float* output_grad,
 
   softmax_backward_kernel<<<grid_size, block_size>>>(
       x_grad, output_grad, z_data, axis_size, size_squashed, axis_stride);
-
-  cudaDeviceSynchronize();
 }
 
 __global__ void cross_entropy_kernel(const float* X, const float* Y, float* Z,
@@ -835,8 +784,6 @@ void GPUHandler::cross_entropy(const float* X, const float* Y, float* Z,
 
   cross_entropy_kernel<<<num_blocks, block_size>>>(X, Y, Z, batch_size,
                                                    num_classes);
-
-  cudaDeviceSynchronize();
 }
 
 __global__ void cross_entropy_backward_x_kernel(const float* t_softmax,
@@ -872,8 +819,6 @@ void GPUHandler::cross_entropy_backward_x(const float* t_softmax,
 
   cross_entropy_backward_x_kernel<<<num_blocks, threads_per_block>>>(
       t_softmax, y, x_grad, output_grad, batch_size, num_classes);
-
-  cudaDeviceSynchronize();
 }
 
 __global__ void cross_entropy_backward_y_kernel(const float* t_softmax,
@@ -901,8 +846,6 @@ void GPUHandler::cross_entropy_backward_y(const float* t_softmax, float* y_grad,
 
   cross_entropy_backward_y_kernel<<<num_blocks, threads_per_block>>>(
       t_softmax, y_grad, output_grad, batch_size, num_classes);
-
-  cudaDeviceSynchronize();
 }
 
 __global__ void argmax_kernel(const float* X, float* Z, size_t axis_size,
