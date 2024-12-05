@@ -72,8 +72,9 @@ PYBIND11_MODULE(tensorlib, m) {
 
   // Create new tensors
   m.def("randn", &TensorFactory::randn, py::arg("shape"), py::arg("mean") = 0.f,
-        py::arg("std") = 1.f, py::arg("device") = Device::CPU,
-        py::arg("requires_grad") = false, "Create a tensor with random values");
+        py::arg("std") = 1.f, py::arg("seed") = -1,
+        py::arg("device") = Device::CPU, py::arg("requires_grad") = false,
+        "Create a tensor with random values");
   m.def("zeros", &TensorFactory::zeros, py::arg("shape"),
         py::arg("device") = Device::CPU, py::arg("requires_grad") = false,
         "Create a tensor with zeros");

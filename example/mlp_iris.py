@@ -6,14 +6,18 @@ from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-device = tl.Device.CPU
+if len(sys.argv) > 1 and sys.argv[1] == "gpu":
+    device = tl.Device.GPU
+else:
+    device = tl.Device.CPU
 
 # Hyperparameters
 input_size = 4  # There are 4 features in the Iris dataset
 hidden_size = 5
 output_size = 3
 learning_rate = 0.01
-epochs = 100
+epochs = 1000
+seed = 1234
 
 # Load Iris dataset
 iris = load_iris()
@@ -47,10 +51,10 @@ y_test = tl.Tensor(
     requires_grad=False,
 )
 
-W1 = tl.randn([input_size, hidden_size], requires_grad=True)
-b1 = tl.zeros([hidden_size], requires_grad=True)
-W2 = tl.randn([hidden_size, output_size], requires_grad=True)
-b2 = tl.zeros([output_size], requires_grad=True)
+W1 = tl.randn([input_size, hidden_size], seed=seed, device=device, requires_grad=True)
+b1 = tl.zeros([hidden_size], device=device, requires_grad=True)
+W2 = tl.randn([hidden_size, output_size], seed=seed, device=device, requires_grad=True)
+b2 = tl.zeros([output_size], device=device, requires_grad=True)
 
 
 def forward(X):
@@ -80,7 +84,7 @@ for epoch in range(epochs):
     train_loss.append(loss.item())
 
     if epoch % 10 == 0:
-        print(f"Epoch {epoch}, Loss: {loss.item():.3f}", end=", ")
+        print(f"Epoch {epoch:02d}, Loss: {loss.item():.3f}", end=", ")
         pred_class = tl.argmax(y_pred, axis=1).to_numpy().astype(int)
         true_class = tl.argmax(y, axis=1).to_numpy().astype(int)
         train_accuracy.append(np.mean(pred_class == true_class))
@@ -96,7 +100,7 @@ for epoch in range(epochs):
         test_accuracy.append(np.mean(pred_class == true_class))
         print(f"Test Accuracy: {test_accuracy[-1]}")
 
-if len(sys.argv) > 1:
+if len(sys.argv) > 2:
     fig, ax = plt.subplots(1, 2, figsize=(12, 6))
     ax[0].plot(train_loss, label="Train Loss")
     ax[0].plot([i for i in range(0, epochs, 10)], test_loss, label="Test Loss")
@@ -109,6 +113,6 @@ if len(sys.argv) > 1:
     ax[1].plot([i for i in range(0, epochs, 10)], test_accuracy, label="Test Accuracy")
     ax[1].set_title("Accuracy")
     ax[1].legend()
-    fig.savefig(sys.argv[1])
+    fig.savefig(sys.argv[2])
 
 print("Training completed.")

@@ -1,16 +1,13 @@
-import tensorlib as tl
+import torch
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.datasets import fetch_openml
 
 # Device selection
-if len(sys.argv) > 1 and sys.argv[1] == "gpu":
-    device = tl.Device.GPU
-else:
-    device = tl.Device.CPU
+device = torch.device("cuda" if len(sys.argv) > 1 and sys.argv[1] == "gpu" else "cpu")
 
 input_size = 28 * 28
 hidden_size = 128
@@ -18,6 +15,9 @@ output_size = 10
 learning_rate = 0.1
 epochs = 200
 seed = 1234
+
+# Set random seed
+torch.manual_seed(seed)
 
 # Load MNIST dataset
 mnist = fetch_openml("mnist_784", parser="auto")
@@ -41,26 +41,22 @@ X_test = X_test.reshape(-1, input_size).astype(np.float32)
 y_train = np.eye(output_size)[y_train]
 y_test = np.eye(output_size)[y_test]
 
-# Convert to tensorlib tensors
-X_train = tl.Tensor(X_train, device=device, requires_grad=False)
-y_train = tl.Tensor(y_train, device=device, requires_grad=False)
-X_test = tl.Tensor(X_test, device=device, requires_grad=False)
-y_test = tl.Tensor(y_test, device=device, requires_grad=False)
+# Convert to torch tensors
+X_train = torch.tensor(X_train, device=device, dtype=torch.float32)
+y_train = torch.tensor(y_train, device=device, dtype=torch.float32)
+X_test = torch.tensor(X_test, device=device, dtype=torch.float32)
+y_test = torch.tensor(y_test, device=device, dtype=torch.float32)
 
 # Initialize weights and biases
-W1 = tl.randn(
-    [input_size, hidden_size], seed=seed, device=device, requires_grad=True
-) * np.sqrt(2 / input_size)
-b1 = tl.zeros([hidden_size], device=device, requires_grad=True)
-W2 = tl.randn(
-    [hidden_size, output_size], seed=seed, device=device, requires_grad=True
-) * np.sqrt(2 / hidden_size)
-b2 = tl.zeros([output_size], device=device, requires_grad=True)
+W1 = torch.randn(input_size, hidden_size, device=device, requires_grad=True)
+b1 = torch.zeros(hidden_size, device=device, requires_grad=True)
+W2 = torch.randn(hidden_size, output_size, device=device, requires_grad=True)
+b2 = torch.zeros(output_size, device=device, requires_grad=True)
 
 
 # Forward pass
 def forward(X):
-    hidden = tl.relu(X @ W1 + b1)
+    hidden = torch.relu(X @ W1 + b1)
     output = hidden @ W2 + b2
     return output
 
@@ -75,36 +71,47 @@ test_accuracy = []
 for epoch in range(epochs):
     # Forward pass
     y_pred = forward(X_train)
-    loss = tl.mean(tl.cross_entropy(y_pred, y_train))
+    loss = torch.mean(torch.sum(-y_train * torch.log_softmax(y_pred, dim=1), dim=1))
+    train_loss.append(loss.item())
 
     # Backward pass
     loss.backward()
 
     # Gradient descent
-    with tl.no_grad():
+    with torch.no_grad():
         W1 -= learning_rate * W1.grad
         b1 -= learning_rate * b1.grad
         W2 -= learning_rate * W2.grad
         b2 -= learning_rate * b2.grad
 
-    train_loss.append(loss.item())
+        # Zero gradients
+        W1.grad.zero_()
+        b1.grad.zero_()
+        W2.grad.zero_()
+        b2.grad.zero_()
+
+    # Calculate training accuracy
+    _, predicted = torch.max(y_pred, 1)
+    _, true_labels = torch.max(y_train, 1)
+    train_accuracy.append((predicted == true_labels).sum().item() / len(y_train))
 
     if epoch % 10 == 0:
-        print(f"Epoch {epoch:03d}, Loss: {loss.item():.3f}, ", end="")
-        pred_class = tl.argmax(y_pred, axis=1).to_numpy().astype(int)
-        true_class = tl.argmax(y_train, axis=1).to_numpy().astype(int)
-        train_accuracy.append(np.mean(pred_class == true_class))
-        # train accuracy to 3 decimal places
+        print(f"Epoch {epoch:03d}, Loss: {train_loss[-1]:.3f}, ", end="")
         print(f"Train Accuracy: {train_accuracy[-1]:.3f}, ", end="")
 
         # Test
-        y_pred = forward(X_test)
-        loss = tl.mean(tl.cross_entropy(y_pred, y_test))
-        test_loss.append(loss.item())
-        print(f"Test Loss: {loss.item():.3f}, ", end="")
-        pred_class = tl.argmax(y_pred, axis=1).to_numpy().astype(int)
-        true_class = tl.argmax(y_test, axis=1).to_numpy().astype(int)
-        test_accuracy.append(np.mean(pred_class == true_class))
+        with torch.no_grad():
+            y_pred = forward(X_test)
+            loss = torch.mean(
+                torch.sum(-y_test * torch.log_softmax(y_pred, dim=1), dim=1)
+            )
+            test_loss.append(loss.item())
+
+            _, predicted = torch.max(y_pred, 1)
+            _, true_labels = torch.max(y_test, 1)
+            test_accuracy.append((predicted == true_labels).sum().item() / len(y_test))
+
+        print(f"Test Loss: {test_loss[-1]:.3f}, ", end="")
         print(f"Test Accuracy: {test_accuracy[-1]:.3f}")
 
 # Plot results if file output is provided

@@ -26,12 +26,13 @@ variable TensorFactory::ones(std::vector<size_t> shape, Device device,
 }
 
 variable TensorFactory::randn(std::vector<size_t> shape, float mean_val,
-                              float std_val, Device device,
+                              float std_val, int seed, Device device,
                               bool requires_grad) {
   size_t size = calculate_size(shape);
   std::vector<float> data(size);
   std::random_device rd;
-  std::mt19937 gen(rd());
+  seed = seed == -1 ? rd() : seed;
+  std::mt19937 gen(seed);
   std::normal_distribution<float> dist(mean_val, std_val);
 
   for (size_t i = 0; i < size; ++i) {

@@ -229,9 +229,7 @@ void DivBackward::apply() {
       }
     } else if (device == Device::GPU) {
       // Allocate a temporary buffer for intermediate computations
-      float* temp_grad_x;
-      checkCudaErrors(
-          cudaMalloc(&temp_grad_x, y_grad_tensor->size() * sizeof(float)));
+      float* temp_grad_x = GPUHandler::allocate(y_grad_tensor->size());
 
       // Compute output_grad * x and store in temp_grad_x
       GPUHandler::multiply(output_grad, x->data(), temp_grad_x,
@@ -244,7 +242,7 @@ void DivBackward::apply() {
       GPUHandler::axpy(y_grad, y_grad, -1.0, y_grad_tensor->size());
 
       // Free the temporary buffer
-      checkCudaErrors(cudaFree(temp_grad_x));
+      GPUHandler::deallocate(temp_grad_x);
     }
   }
 }
@@ -695,9 +693,8 @@ void ReshapeBackward::apply() {
       }
     } else if (device == Device::GPU) {
       // copy memory
-      checkCudaErrors(cudaMemcpy(x_grad, output_grad,
-                                 x_grad_tensor->size() * sizeof(float),
-                                 cudaMemcpyDeviceToDevice));
+      GPUHandler::copy_device_to_device(x_grad, output_grad,
+                                        x_grad_tensor->size());
     }
   }
 }
@@ -852,7 +849,7 @@ SelectorBackward::SelectorBackward(variable output, variable x, size_t axis,
 
 SelectorBackward::~SelectorBackward() {
   if (device_ == Device::GPU) {
-    cudaFree(index_list_);
+    GPUHandler::deallocate(index_list_);
   } else if (device_ == Device::CPU) {
     delete[] index_list_;
   }
@@ -897,7 +894,7 @@ SelectAllBackward::SelectAllBackward(variable output, variable x,
 
 SelectAllBackward::~SelectAllBackward() {
   if (device_ == Device::GPU) {
-    cudaFree(index_);
+    GPUHandler::deallocate(index_);
   } else if (device_ == Device::CPU) {
     delete[] index_;
   }
@@ -996,7 +993,7 @@ void CrossEntropyBackward::apply() {
     t_softmax = new float[batch_size * num_classes];
     CPUHandler::softmax(x->data(), t_softmax, x->shape(), 1);
   } else if (device == Device::GPU) {
-    cudaMalloc(&t_softmax, batch_size * num_classes * sizeof(float));
+    t_softmax = GPUHandler::allocate(batch_size * num_classes);
     GPUHandler::softmax(x->data(), t_softmax, x->shape(), 1);
   }
 
@@ -1043,6 +1040,6 @@ void CrossEntropyBackward::apply() {
   if (device == Device::CPU) {
     delete[] t_softmax;
   } else if (device == Device::GPU) {
-    cudaFree(t_softmax);
+    GPUHandler::deallocate(t_softmax);
   }
 }

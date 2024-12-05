@@ -27,7 +27,8 @@ class TensorFactory {
                        bool requires_grad = false);
   // Helper function to initialize random normal data
   static variable randn(std::vector<size_t> shape, float mean = 0.0,
-                        float stddev = 1.0, Device device = Device::CPU,
+                        float stddev = 1.0, int seed = -1,
+                        Device device = Device::CPU,
                         bool requires_grad = false);
 };
 

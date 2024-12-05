@@ -498,10 +498,11 @@ void GPUHandler::broadcast(const float* X, float* Z,
                       z_strides = calculate_strides(z_shape);
 
   size_t *d_x_shape, *d_z_shape, *d_x_strides, *d_z_strides;
-  cudaMalloc(&d_x_shape, x_dims * sizeof(size_t));
-  cudaMalloc(&d_z_shape, z_dims * sizeof(size_t));
-  cudaMalloc(&d_x_strides, x_dims * sizeof(size_t));
-  cudaMalloc(&d_z_strides, z_dims * sizeof(size_t));
+  cudaStream_t stream = getInstance().getStream();
+  cudaMallocAsync(&d_x_shape, x_dims * sizeof(size_t), stream);
+  cudaMallocAsync(&d_z_shape, z_dims * sizeof(size_t), stream);
+  cudaMallocAsync(&d_x_strides, x_dims * sizeof(size_t), stream);
+  cudaMallocAsync(&d_z_strides, z_dims * sizeof(size_t), stream);
 
   cudaMemcpy(d_x_shape, x_shape.data(), x_dims * sizeof(size_t),
              cudaMemcpyHostToDevice);
@@ -520,10 +521,10 @@ void GPUHandler::broadcast(const float* X, float* Z,
 
   cudaDeviceSynchronize();
 
-  cudaFree(d_x_shape);
-  cudaFree(d_z_shape);
-  cudaFree(d_x_strides);
-  cudaFree(d_z_strides);
+  deallocate(d_x_shape);
+  deallocate(d_z_shape);
+  deallocate(d_x_strides);
+  deallocate(d_z_strides);
 }
 
 __global__ void broadcastBackwardKernel(const float* output_grad, float* x_grad,
@@ -554,10 +555,12 @@ void GPUHandler::broadcastBackward(const float* output_grad, float* x_grad,
                                    size_t z_size) {
   size_t ndim = x_shape.size();
 
+  cudaStream_t stream = getInstance().getStream();
+
   size_t *d_x_shape, *d_z_stride, *d_x_stride;
-  cudaMalloc(&d_x_shape, ndim * sizeof(size_t));
-  cudaMalloc(&d_z_stride, ndim * sizeof(size_t));
-  cudaMalloc(&d_x_stride, ndim * sizeof(size_t));
+  cudaMallocAsync(&d_x_shape, ndim * sizeof(size_t), stream);
+  cudaMallocAsync(&d_z_stride, ndim * sizeof(size_t), stream);
+  cudaMallocAsync(&d_x_stride, ndim * sizeof(size_t), stream);
 
   cudaMemcpy(d_x_shape, x_shape.data(), ndim * sizeof(size_t),
              cudaMemcpyHostToDevice);
@@ -574,9 +577,9 @@ void GPUHandler::broadcastBackward(const float* output_grad, float* x_grad,
 
   cudaDeviceSynchronize();
 
-  cudaFree(d_x_shape);
-  cudaFree(d_z_stride);
-  cudaFree(d_x_stride);
+  deallocate(d_x_shape);
+  deallocate(d_z_stride);
+  deallocate(d_x_stride);
 }
 
 __global__ void max_kernel(const float* X, float* Z, size_t* idx_list,
@@ -611,10 +614,11 @@ size_t* GPUHandler::max(const float* X, float* Z, std::vector<size_t> x_shape,
   size_t* d_x_stride;
 
   size_t* idx_list;
-  cudaMalloc(&idx_list, output_size * sizeof(size_t));
+  cudaStream_t stream = getInstance().getStream();
+  cudaMallocAsync(&idx_list, output_size * sizeof(size_t), stream);
 
-  cudaMalloc(&d_x_shape, ndim * sizeof(size_t));
-  cudaMalloc(&d_x_stride, ndim * sizeof(size_t));
+  cudaMallocAsync(&d_x_shape, ndim * sizeof(size_t), stream);
+  cudaMallocAsync(&d_x_stride, ndim * sizeof(size_t), stream);
 
   cudaMemcpy(d_x_shape, x_shape.data(), ndim * sizeof(size_t),
              cudaMemcpyHostToDevice);
@@ -628,8 +632,8 @@ size_t* GPUHandler::max(const float* X, float* Z, std::vector<size_t> x_shape,
   max_kernel<<<grid_size, block_size>>>(X, Z, idx_list, d_x_shape, d_x_stride,
                                         input_size, output_size, ndim, axis);
 
-  cudaFree(d_x_shape);
-  cudaFree(d_x_stride);
+  deallocate(d_x_stride);
+  deallocate(d_x_shape);
 
   return idx_list;
 }
@@ -670,10 +674,11 @@ size_t* GPUHandler::min(const float* X, float* Z, std::vector<size_t> x_shape,
   size_t* d_x_stride;
 
   size_t* idx_list;
-  cudaMalloc(&idx_list, output_size * sizeof(size_t));
+  cudaStream_t stream = getInstance().getStream();
+  cudaMallocAsync(&idx_list, output_size * sizeof(size_t), stream);
 
-  cudaMalloc(&d_x_shape, ndim * sizeof(size_t));
-  cudaMalloc(&d_x_stride, ndim * sizeof(size_t));
+  cudaMallocAsync(&d_x_shape, ndim * sizeof(size_t), stream);
+  cudaMallocAsync(&d_x_stride, ndim * sizeof(size_t), stream);
 
   cudaMemcpy(d_x_shape, x_shape.data(), ndim * sizeof(size_t),
              cudaMemcpyHostToDevice);
@@ -687,8 +692,8 @@ size_t* GPUHandler::min(const float* X, float* Z, std::vector<size_t> x_shape,
   min_kernel<<<grid_size, block_size>>>(X, Z, idx_list, d_x_shape, d_x_stride,
                                         input_size, output_size, ndim, axis);
 
-  cudaFree(d_x_shape);
-  cudaFree(d_x_stride);
+  deallocate(d_x_stride);
+  deallocate(d_x_shape);
 
   return idx_list;
 }
@@ -974,4 +979,73 @@ void GPUHandler::argmin(const float* X, float* Z, std::vector<size_t> x_shape,
 
   argmin_kernel<<<grid_size, block_size>>>(X, Z, x_shape[axis], x_stride[axis],
                                            output_size, ndim, axis);
+}
+
+float* GPUHandler::allocate(size_t size) {
+  float* device_data;
+  cudaStream_t stream = getInstance().getStream();
+  checkCudaErrors(cudaMallocAsync(&device_data, size * sizeof(float), stream));
+
+  return device_data;
+}
+
+float* GPUHandler::allocate_and_copy(const float* host_data, size_t size) {
+  float* device_data;
+  cudaStream_t stream = getInstance().getStream();
+  checkCudaErrors(cudaMallocAsync(&device_data, size * sizeof(float), stream));
+  checkCudaErrors(cudaMemcpy(device_data, host_data, size * sizeof(float),
+                             cudaMemcpyHostToDevice));
+
+  return device_data;
+}
+
+float* GPUHandler::allocate_and_zero(size_t size) {
+  float* device_data;
+  cudaStream_t stream = getInstance().getStream();
+  checkCudaErrors(cudaMallocAsync(&device_data, size * sizeof(float), stream));
+  checkCudaErrors(cudaMemset(device_data, 0, size * sizeof(float)));
+
+  return device_data;
+}
+
+void GPUHandler::deallocate(float* device_data) {
+  checkCudaErrors(cudaFreeAsync(device_data, getInstance().getStream()));
+}
+
+void GPUHandler::deallocate(size_t* device_data) {
+  checkCudaErrors(cudaFreeAsync(device_data, getInstance().getStream()));
+}
+
+void GPUHandler::copy_device_to_host(float* host_data, const float* device_data,
+                                     size_t size) {
+  checkCudaErrors(cudaMemcpy(host_data, device_data, size * sizeof(float),
+                             cudaMemcpyDeviceToHost));
+}
+
+void GPUHandler::copy_host_to_device(float* device_data, const float* host_data,
+                                     size_t size) {
+  checkCudaErrors(cudaMemcpy(device_data, host_data, size * sizeof(float),
+                             cudaMemcpyHostToDevice));
+}
+
+void GPUHandler::copy_device_to_device(float* dest, const float* src,
+                                       size_t size) {
+  checkCudaErrors(cudaMemcpyAsync(dest, src, size * sizeof(float),
+                                  cudaMemcpyDeviceToDevice));
+}
+
+void GPUHandler::zero(float* device_data, size_t size) {
+  checkCudaErrors(cudaMemset(device_data, 0, size * sizeof(float)));
+}
+
+GPUHandler::GPUHandler() {
+  checkCudaErrors(cudaSetDevice(0));
+  checkCublasErrors(cublasCreate(&handle_));
+  checkCudaErrors(cudaStreamCreate(&stream_));
+  cublasSetStream(handle_, stream_);
+}
+
+GPUHandler::~GPUHandler() {
+  cublasDestroy(handle_);
+  cudaStreamDestroy(stream_);
 }

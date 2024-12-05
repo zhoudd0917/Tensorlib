@@ -2,6 +2,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <tensorlib/autograd.hpp>
+#include <tensorlib/gpu_handler.cuh>
 #include <tensorlib/grad_mode.hpp>
 #include <tensorlib/node.cuh>
 #include <tensorlib/tensor.cuh>
@@ -35,9 +36,7 @@ Tensor::Tensor(std::vector<float> data, std::vector<size_t> shape,
     data_ = new float[size];
     std::copy(data.begin(), data.end(), data_);
   } else if (device == Device::GPU) {
-    cudaMalloc(&data_, size * sizeof(float));
-    cudaMemcpy(data_, data.data(), size * sizeof(float),
-               cudaMemcpyHostToDevice);
+    data_ = GPUHandler::allocate_and_copy(data.data(), size);
   }
 
   if (requires_grad) autograd_meta_ = std::make_shared<AutogradMeta>(this);
@@ -68,8 +67,7 @@ Tensor::Tensor(std::vector<size_t> shape, Device device, bool requires_grad)
     // set to zero
     std::fill(data_, data_ + size, 0);
   } else if (device == Device::GPU) {
-    cudaMalloc(&data_, size * sizeof(float));
-    cudaMemset(data_, 0, size * sizeof(float));
+    data_ = GPUHandler::allocate_and_zero(size);
   }
 
   if (requires_grad) autograd_meta_ = std::make_shared<AutogradMeta>(this);
@@ -80,7 +78,7 @@ Tensor::~Tensor() {
   if (device_ == Device::CPU) {
     delete[] data_;
   } else if (device_ == Device::GPU) {
-    cudaFree(data_);
+    GPUHandler::deallocate(data_);
   }
 }
 
@@ -92,11 +90,9 @@ variable Tensor::to_device(Device device) {
       std::make_shared<Tensor>(shape_, device, requires_grad_);
 
   if (device == Device::CPU) {
-    cudaMemcpy(new_tensor->data_, data_, size() * sizeof(float),
-               cudaMemcpyDeviceToHost);
+    GPUHandler::copy_device_to_host(new_tensor->data_, data_, size());
   } else if (device == Device::GPU) {
-    cudaMemcpy(new_tensor->data_, data_, size() * sizeof(float),
-               cudaMemcpyHostToDevice);
+    GPUHandler::copy_host_to_device(new_tensor->data_, data_, size());
   }
 
   return new_tensor;
@@ -141,8 +137,8 @@ void Tensor::set_grad(std::shared_ptr<Tensor> grad) {
   if (device_ == Device::CPU) {
     std::copy(grad->data(), grad->data() + size, autograd_meta_->grad_->data());
   } else if (device_ == Device::GPU) {
-    cudaMemcpy(autograd_meta_->grad_->data(), grad->data(),
-               size * sizeof(float), cudaMemcpyDeviceToDevice);
+    GPUHandler::copy_device_to_device(autograd_meta_->grad_->data(),
+                                      grad->data(), size);
   }
 }
 
@@ -170,7 +166,7 @@ void Tensor::zero_() {
   if (device_ == Device::CPU) {
     std::fill(data_, data_ + size(), 0);
   } else if (device_ == Device::GPU) {
-    cudaMemset(data_, 0, size() * sizeof(float));
+    GPUHandler::zero(data_, size());
   }
 }
 
@@ -183,7 +179,7 @@ float Tensor::item() const {
   if (device_ == Device::CPU) {
     result = data_[0];
   } else if (device_ == Device::GPU) {
-    cudaMemcpy(&result, data_, sizeof(float), cudaMemcpyDeviceToHost);
+    GPUHandler::copy_device_to_host(&result, data_, 1);
   }
   return result;
 }
@@ -225,7 +221,7 @@ std::string Tensor::to_string() const {
   float* temp = nullptr;
   if (device_ == Device::GPU) {
     temp = new float[size()];
-    cudaMemcpy(temp, data_, size() * sizeof(float), cudaMemcpyDeviceToHost);
+    GPUHandler::copy_device_to_host(temp, data_, size());
   } else {
     temp = data_;
   }

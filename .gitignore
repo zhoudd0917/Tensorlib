@@ -1,3 +1,7 @@
 build
 .vscode
 _autorun.sh
+*.data*
+*.nsys*
+*.sqlite
+*.svg

@@ -44,3 +44,5 @@ set_target_properties(${CPP_LIBRARY_NAME} PROPERTIES
 
 target_link_libraries(${CPP_LIBRARY_NAME} PRIVATE CUDA::cudart CUDA::cublas ${OpenBLAS_LIBRARIES})
 target_include_directories(${CPP_LIBRARY_NAME} PRIVATE ${OpenBLAS_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

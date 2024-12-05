@@ -126,20 +126,29 @@ class GPUHandler {
   static void update_grad_selector(size_t* index_list, float* x_grad,
                                    float* output_grad, size_t size);
 
-  cublasHandle_t getHandle() { return handle; }
+  static float* allocate(size_t size);
+  static float* allocate_and_copy(const float* host_data, size_t size);
+  static float* allocate_and_zero(size_t size);
+  static void deallocate(float* device_data);
+  static void deallocate(size_t* device_data);
+  static void copy_host_to_device(float* device_data, const float* host_data,
+                                  size_t size);
+  static void copy_device_to_host(float* host_data, const float* device_data,
+                                  size_t size);
+  static void copy_device_to_device(float* dst, const float* src, size_t size);
+  static void zero(float* x, size_t size);
+
+  cublasHandle_t getHandle() { return handle_; }
+  cudaStream_t getStream() { return stream_; }
 
   GPUHandler(const GPUHandler&) = delete;
   GPUHandler& operator=(const GPUHandler&) = delete;
 
  private:
-  cublasHandle_t handle;
+  cublasHandle_t handle_;
+  cudaStream_t stream_;
 
-  GPUHandler() {
-    if (cublasCreate(&handle) != CUBLAS_STATUS_SUCCESS) {
-      throw std::runtime_error("Failed to create cuBLAS handle");
-    }
-  }
-
-  ~GPUHandler() { cublasDestroy(handle); }
+  GPUHandler();
+  ~GPUHandler();
 };
 #endif
